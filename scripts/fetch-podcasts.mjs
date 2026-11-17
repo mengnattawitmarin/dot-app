@@ -14,7 +14,7 @@ export const CATEGORIES = [
   { id: "mystery", label: "คดี & ลึกลับ", genres: ["1488"], terms: ["คดีดัง", "คดีฆาตกรรม", "true crime", "ฆาตกร", "อาชญากรรม"], keywords: ["คดี", "ฆาตกร", "ฆาตกรรม", "อาชญากรรม", "crime", "ปริศนา", "ลึกลับ"], evergreen: true },
   { id: "story", label: "เรื่องเล่า", genres: ["1302"], terms: ["เล่าเรื่อง", "เรื่องเล่า", "เรื่องจริง", "ประสบการณ์ชีวิต"], keywords: ["เรื่องเล่า", "เล่าเรื่อง", "เรื่องจริง", "ประสบการณ์", "story"] },
   { id: "novel", label: "นิยายเสียง", genres: ["1483", "1482"], terms: ["นิยายเสียง", "หนังสือเสียง", "อ่านนิยาย", "นิทาน", "audiobook", "เรื่องสั้น"], keywords: ["นิยาย", "หนังสือเสียง", "นิทาน", "อ่านให้ฟัง", "เรื่องสั้น", "audiobook", "วรรณกรรม"], evergreen: true },
-  { id: "drama", label: "ภาพยนตร์ & ละครเสียง", genres: ["1484", "1485", "1486"], terms: ["ละครเสียง", "ละครวิทยุ", "audio drama", "หนังเสียง", "radio drama"], keywords: ["ละครเสียง", "ละครวิทยุ", "audio drama", "radio drama", "หนังเสียง", "ภาพยนตร์เสียง"], evergreen: true },
+  { id: "drama", label: "ภาพยนตร์ & ละครเสียง", genres: ["1484", "1485", "1486"], terms: ["ละครเสียง", "ละครวิทยุ", "audio drama", "หนังเสียง", "radio drama", "ละคร", "ละครเสียงตลก", "ซีรีส์เสียง", "audio series"], keywords: ["ละครเสียง", "ละครวิทยุ", "audio drama", "radio drama", "หนังเสียง", "ภาพยนตร์เสียง", "ละคร", "ซีรีส์เสียง", "audio series"], evergreen: true },
   { id: "history", label: "ประวัติศาสตร์", genres: ["1487"], terms: ["ประวัติศาสตร์", "ประวัติศาสตร์ไทย", "ย้อนอดีต", "history thai"], keywords: ["ประวัติศาสตร์", "history", "ย้อนอดีต", "สมัยก่อน", "พงศาวดาร"], evergreen: true },
   { id: "knowledge", label: "ความรู้", genres: ["1533", "1304", "1543"], terms: ["ความรู้", "วิทยาศาสตร์", "รอบรู้", "สารคดี", "ความรู้รอบตัว"], keywords: ["ความรู้", "วิทยาศาสตร์", "science", "สารคดี", "รู้ไว้", "อธิบาย"] },
   { id: "self", label: "พัฒนาตัวเอง", genres: ["1500", "1544"], terms: ["พัฒนาตัวเอง", "จิตวิทยา", "แรงบันดาลใจ", "สรุปหนังสือ"], keywords: ["พัฒนาตัวเอง", "จิตวิทยา", "แรงบันดาลใจ", "mindset", "self"] },
@@ -209,7 +209,18 @@ async function main() {
     }),
   );
 
-  // 3) Cap each category, freshest first.
+  // 3) Drop duplicate shows (same title re-published under another feed), cap each category.
+  const seenNames = new Set();
+  const unique = shows
+    .sort((a, b) => (b.episodes[0]?.date ?? 0) - (a.episodes[0]?.date ?? 0))
+    .filter((x) => {
+      const k = x.name.toLowerCase().replace(/[^a-z0-9ก-๙]/g, "");
+      if (seenNames.has(k)) return false;
+      seenNames.add(k);
+      return true;
+    });
+  shows.length = 0;
+  shows.push(...unique);
   const capped = [];
   for (const cat of CATEGORIES) {
     const list = shows
