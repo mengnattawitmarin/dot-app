@@ -41,6 +41,10 @@ jobs:
       - name: Install
         run: npm install --no-audit --no-fund
 
+      - name: Bundle stories catalogue into the app
+        continue-on-error: true
+        run: node scripts/fetch-podcasts.mjs
+
       - name: Build web app
         run: npm run build
         env:

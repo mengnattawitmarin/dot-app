@@ -91,9 +91,18 @@ export function StoriesView() {
 
       <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-6">
         {status !== "ready" && shows.length === 0 ? (
-          <p className="mt-16 text-center text-sm text-muted">
-            {status === "error" ? "โหลดรายการไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่" : "กำลังโหลดเรื่องเล่า…"}
-          </p>
+          <div className="mt-16 text-center">
+            <p className="text-sm text-muted">{status === "error" ? "โหลดรายการไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่" : "กำลังโหลดเรื่องเล่า…"}</p>
+            {status === "error" ? (
+              <button
+                type="button"
+                onClick={() => void loadStories()}
+                className="mt-4 h-10 rounded-full bg-gold-grad px-5 text-sm font-semibold text-accent-fg"
+              >
+                ลองใหม่
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {cat === "all" && resume.length > 0 ? (

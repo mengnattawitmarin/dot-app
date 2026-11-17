@@ -10,6 +10,34 @@ import { useApp } from "@/lib/store";
  * The bundled catalogue is always the fallback, so the app works with no network.
  */
 export const REMOTE_BASE = "https://mengnattawitmarin.github.io/dot-app/";
+/** Same files straight from the gh-pages branch — works even if GitHub Pages isn't switched on. */
+const RAW_BASE = "https://raw.githubusercontent.com/mengnattawitmarin/dot-app/gh-pages/";
+const CDN_BASE = "https://cdn.jsdelivr.net/gh/mengnattawitmarin/dot-app@gh-pages/";
+
+/**
+ * Fetch a published JSON file, trying (native) the website, raw GitHub, jsDelivr, then the copy
+ * bundled in the app; (web) the site itself first.
+ */
+export async function fetchPublishedText(file: string, timeoutMs = 8000): Promise<string | null> {
+  const local = new URL("./", document.baseURI).href;
+  const bases = Capacitor.isNativePlatform() ? [REMOTE_BASE, RAW_BASE, CDN_BASE, local] : [local, RAW_BASE, CDN_BASE];
+  const bust = `?t=${Math.floor(Date.now() / 600_000)}`;
+  for (const base of bases) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${base}${file}${base === local ? "" : bust}`, { signal: controller.signal, cache: "no-store" });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (text.trim().startsWith("{") || text.trim().startsWith("[")) return text;
+    } catch {
+      /* try the next source */
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+  return null;
+}
 
 type RemoteCatalog = {
   stations?: Station[];
@@ -20,22 +48,11 @@ type RemoteCatalog = {
 
 type StreamStatus = { checkedAt?: string; dead?: string[] };
 
-function base() {
-  // Native apps load from the device, so always ask the hosted site.
-  return Capacitor.isNativePlatform() ? REMOTE_BASE : new URL("./", document.baseURI).href;
-}
-
 async function getJson<T>(file: string): Promise<T | null> {
+  const text = await fetchPublishedText(file, 6000);
+  if (!text) return null;
   try {
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(`${base()}${file}?t=${Math.floor(Date.now() / 600_000)}`, {
-      signal: controller.signal,
-      cache: "no-store",
-    });
-    window.clearTimeout(timer);
-    if (!res.ok) return null;
-    return (await res.json()) as T;
+    return JSON.parse(text) as T;
   } catch {
     return null;
   }

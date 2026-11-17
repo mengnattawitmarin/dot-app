@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { Capacitor } from "@capacitor/core";
-import { REMOTE_BASE } from "@/lib/remote";
+import { fetchPublishedText } from "@/lib/remote";
 import { loadValue, saveValue } from "@/lib/storage";
 
 /**
@@ -82,11 +82,11 @@ export async function loadStories() {
   }
   if (useStories.getState().status !== "ready") useStories.setState({ status: "loading" });
   try {
-    const base = native ? REMOTE_BASE : new URL("./", document.baseURI).href;
-    const res = await fetch(`${base}podcasts.json?t=${Math.floor(Date.now() / 3_600_000)}`);
-    if (!res.ok) throw new Error(String(res.status));
-    const text = await res.text();
-    apply(JSON.parse(text));
+    const text = await fetchPublishedText("podcasts.json", 10000);
+    if (!text) throw new Error("unavailable");
+    const data = JSON.parse(text) as { shows?: Show[] };
+    if (!data.shows?.length) throw new Error("empty");
+    apply(data);
     void saveValue(CACHE_KEY, text);
   } catch {
     if (useStories.getState().status !== "ready") useStories.setState({ status: "error" });
