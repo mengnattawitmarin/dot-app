@@ -22,10 +22,9 @@ type AuthState = {
   ready: boolean;
   session: Session | null;
   profile: Profile | null;
-  pendingEmail: string | null;
 };
 
-export const useAuth = create<AuthState>(() => ({ ready: !cloudEnabled, session: null, profile: null, pendingEmail: null }));
+export const useAuth = create<AuthState>(() => ({ ready: !cloudEnabled, session: null, profile: null }));
 
 async function loadProfile(userId: string) {
   if (!supabase) return;
@@ -51,21 +50,27 @@ export async function initAuth(onSignedIn: () => void) {
   });
 }
 
-/** Step 1: e-mail a 6-digit code (no deep links needed, works the same in the app and on the web). */
-export async function sendCode(email: string) {
-  if (!supabase) throw new Error("ยังไม่ได้ตั้งค่าระบบออนไลน์");
-  const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-  if (error) throw new Error(error.message);
-  useAuth.setState({ pendingEmail: email });
+function authError(message: string) {
+  if (/invalid login credentials/i.test(message)) return "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+  if (/already registered|already exists/i.test(message)) return "อีเมลนี้สมัครแล้ว — กดแท็บเข้าสู่ระบบ";
+  if (/password/i.test(message) && /6|short|weak/i.test(message)) return "รหัสผ่านต้องยาวอย่างน้อย 6 ตัว";
+  if (/email not confirmed/i.test(message)) return "อีเมลยังไม่ได้ยืนยัน (ปิด Confirm email ใน Supabase)";
+  if (/rate limit/i.test(message)) return "ลองบ่อยเกินไป รอสักครู่แล้วลองใหม่";
+  return message;
 }
 
-/** Step 2: verify the code from the e-mail. */
-export async function verifyCode(code: string) {
-  const email = useAuth.getState().pendingEmail;
-  if (!supabase || !email) throw new Error("กรุณาขอรหัสใหม่");
-  const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: "email" });
-  if (error) throw new Error("รหัสไม่ถูกต้องหรือหมดอายุ — ตรวจอีกครั้งหรือขอรหัสใหม่");
-  useAuth.setState({ pendingEmail: null });
+/** Email + password. No e-mail is sent when "Confirm email" is off in Supabase (free tier friendly). */
+export async function signInWithPassword(email: string, password: string) {
+  if (!supabase) throw new Error("ยังไม่ได้ตั้งค่าระบบออนไลน์");
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw new Error(authError(error.message));
+}
+
+export async function signUp(email: string, password: string) {
+  if (!supabase) throw new Error("ยังไม่ได้ตั้งค่าระบบออนไลน์");
+  const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
+  if (error) throw new Error(authError(error.message));
+  if (!data.session) throw new Error("สมัครแล้ว แต่ต้องยืนยันอีเมลก่อน — ให้ผู้ดูแลปิด Confirm email ใน Supabase");
 }
 
 export async function signOut() {

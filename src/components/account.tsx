@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { cloudEnabled } from "@/lib/config";
 import { disablePush, enablePush, pushAvailable, pushWanted } from "@/lib/push";
-import { sendCode, signOut, updateHandle, useAuth, verifyCode } from "@/lib/supabase";
+import { signInWithPassword, signOut, signUp, updateHandle, useAuth } from "@/lib/supabase";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { hashPalette } from "@/components/art";
@@ -49,7 +49,7 @@ export function AccountCard() {
           onClick={() => askSignIn()}
           className="mt-4 h-11 w-full rounded-xl bg-gold-grad text-sm font-semibold text-accent-fg"
         >
-          เข้าสู่ระบบด้วยอีเมล
+          เข้าสู่ระบบ / สมัครสมาชิก
         </button>
       </div>
     );
@@ -148,28 +148,32 @@ export function PushToggle() {
 export function SignInSheet() {
   const open = useSignIn((s) => s.open);
   const reason = useSignIn((s) => s.reason);
-  const pending = useAuth((s) => s.pendingEmail);
   const session = useAuth((s) => s.session);
+  const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (session && open) {
-      useSignIn.setState({ open: false });
-      useApp.getState().toast("เข้าสู่ระบบแล้ว");
+      useSignIn.setState({ open: false, reason: null });
+      setPassword("");
+      useApp.getState().toast(mode === "up" ? "สมัครสมาชิกเรียบร้อย ยินดีต้อนรับ!" : "เข้าสู่ระบบแล้ว");
+      setMode("in"); // next time the sheet opens on the sign-in tab
     }
-  }, [session, open]);
+  }, [session, open, mode]);
 
   if (!open) return null;
   const close = () => useSignIn.setState({ open: false, reason: null });
 
-  async function run(fn: () => Promise<void>) {
+  async function submit() {
     setBusy(true);
     setError(null);
     try {
-      await fn();
+      if (mode === "up") await signUp(email, password);
+      else await signInWithPassword(email, password);
     } catch (e) {
       setError(e instanceof Error ? e.message : "เกิดข้อผิดพลาด");
     } finally {
@@ -181,73 +185,83 @@ export function SignInSheet() {
     <div className="absolute inset-0 z-[60] flex flex-col justify-end bg-black/60" onClick={close}>
       <div className="rise safe-bottom rounded-t-3xl bg-elevated p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between">
-          <p className="text-lg font-semibold">เข้าสู่ระบบ Do.T</p>
+          <p className="text-lg font-semibold">{mode === "up" ? "สมัครสมาชิก Do.T" : "เข้าสู่ระบบ Do.T"}</p>
           <button type="button" onClick={close} aria-label="ปิด" className="grid size-9 place-items-center text-muted">
             <CloseIcon size={20} />
           </button>
         </div>
         {reason ? <p className="mt-1 text-sm text-muted">{reason}</p> : null}
-        {!pending ? (
-          <form
-            className="mt-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(() => sendCode(email.trim()));
-            }}
-          >
-            <label className="text-xs text-faint" htmlFor="si-email">
-              อีเมล
-            </label>
+
+        <div className="mt-4 grid grid-cols-2 rounded-xl bg-subtle p-1">
+          {(["in", "up"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMode(m);
+                setError(null);
+              }}
+              className={cn("h-9 rounded-lg text-sm", mode === m ? "bg-gold-grad font-semibold text-accent-fg" : "text-muted")}
+            >
+              {m === "in" ? "เข้าสู่ระบบ" : "สมัครใหม่"}
+            </button>
+          ))}
+        </div>
+
+        <form
+          className="mt-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void submit();
+          }}
+        >
+          <label className="text-xs text-faint" htmlFor="si-email">
+            อีเมล
+          </label>
+          <input
+            id="si-email"
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="mt-1 h-12 w-full rounded-xl bg-subtle px-4 text-base text-fg outline-none focus:ring-2 focus:ring-gold"
+          />
+          <label className="mt-3 block text-xs text-faint" htmlFor="si-pass">
+            รหัสผ่าน {mode === "up" ? "(อย่างน้อย 6 ตัว)" : ""}
+          </label>
+          <div className="relative mt-1">
             <input
-              id="si-email"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
+              id="si-pass"
+              type={show ? "text" : "password"}
+              autoComplete={mode === "up" ? "new-password" : "current-password"}
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="mt-1 h-12 w-full rounded-xl bg-subtle px-4 text-base text-fg outline-none focus:ring-2 focus:ring-gold"
+              minLength={6}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="h-12 w-full rounded-xl bg-subtle pl-4 pr-16 text-base text-fg outline-none focus:ring-2 focus:ring-gold"
             />
-            <button disabled={busy} className="mt-4 h-12 w-full rounded-xl bg-gold-grad font-semibold text-accent-fg disabled:opacity-50">
-              {busy ? "กำลังส่ง…" : "ส่งรหัสเข้าอีเมล"}
-            </button>
-            <p className="mt-3 text-center text-xs text-faint">ไม่ต้องตั้งรหัสผ่าน — เราจะส่งรหัส 6 หลักไปที่อีเมลของคุณ</p>
-          </form>
-        ) : (
-          <form
-            className="mt-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run(() => verifyCode(code));
-            }}
-          >
-            <p className="text-sm text-muted">
-              ส่งรหัสไปที่ <span className="text-fg">{pending}</span> แล้ว
-            </p>
-            <input
-              autoFocus
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={10}
-              value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-              placeholder="••••••"
-              className="mt-3 h-14 w-full rounded-xl bg-subtle text-center font-display text-2xl tracking-[0.5em] text-fg outline-none focus:ring-2 focus:ring-gold"
-            />
-            <button disabled={busy || code.length < 6} className="mt-4 h-12 w-full rounded-xl bg-gold-grad font-semibold text-accent-fg disabled:opacity-50">
-              {busy ? "กำลังตรวจสอบ…" : "ยืนยัน"}
-            </button>
             <button
               type="button"
-              onClick={() => useAuth.setState({ pendingEmail: null })}
-              className="mt-2 h-10 w-full text-xs text-muted"
+              onClick={() => setShow((v) => !v)}
+              className="absolute right-2 top-1/2 h-8 -translate-y-1/2 rounded-lg px-2 text-xs text-muted"
             >
-              เปลี่ยนอีเมล / ขอรหัสใหม่
+              {show ? "ซ่อน" : "แสดง"}
             </button>
-          </form>
-        )}
-        {error ? <p className="mt-2 text-center text-sm text-live">{error}</p> : null}
+          </div>
+          <button
+            disabled={busy || password.length < 6 || !email}
+            className="mt-5 h-12 w-full rounded-xl bg-gold-grad font-semibold text-accent-fg disabled:opacity-50"
+          >
+            {busy ? "กำลังดำเนินการ…" : mode === "up" ? "สมัครสมาชิก" : "เข้าสู่ระบบ"}
+          </button>
+          {mode === "up" ? (
+            <p className="mt-3 text-center text-xs text-faint">การสมัครถือว่ายอมรับให้คลิปที่โพสต์สาธารณะแสดงต่อผู้ใช้ Do.T คนอื่น</p>
+          ) : null}
+        </form>
+        {error ? <p className="mt-3 text-center text-sm text-live">{error}</p> : null}
       </div>
     </div>
   );
