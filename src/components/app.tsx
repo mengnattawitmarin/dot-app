@@ -1,11 +1,14 @@
 import { useEffect } from "react";
-import { channels, getChannel, getStation, getTitle, mark } from "@/lib/catalog";
+import { channels, getChannel, getStation, getTitle } from "@/lib/catalog";
+import { StationArt } from "@/components/art";
 import { closeChannel, closeTitle, openChannel } from "@/lib/actions";
 import { applyVolume, bindAudio, pauseRadio, playStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp, type TabId } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { loadRemote } from "@/lib/remote";
-import { BellIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
+import { loadThaiStations } from "@/lib/radio-browser";
+import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
+import { ClipperView } from "@/components/clipper-view";
 import { HomeView } from "@/components/home-view";
 import { MoviesView } from "@/components/movies-view";
 import { NowScreen } from "@/components/now-screen";
@@ -19,8 +22,8 @@ import { VideoPlayer } from "@/components/video-player";
 const NAV: Array<{ id: TabId; label: string; icon: typeof HomeIcon }> = [
   { id: "home", label: "หน้าหลัก", icon: HomeIcon },
   { id: "radio", label: "วิทยุ", icon: RadioIcon },
+  { id: "clipper", label: "คลิป", icon: ClipIcon },
   { id: "tv", label: "ทีวี", icon: TvIcon },
-  { id: "search", label: "ค้นหา", icon: SearchIcon },
   { id: "profile", label: "โปรไฟล์", icon: UserIcon },
 ];
 
@@ -43,7 +46,7 @@ export function App() {
 
   useEffect(() => {
     void useApp.getState().hydrate().then(applyVolume);
-    void loadRemote();
+    void loadRemote().then(loadThaiStations);
     const sync = () => useApp.getState().setOnline(navigator.onLine);
     const wentOffline = () => {
       useApp.getState().setOnline(false);
@@ -98,7 +101,7 @@ export function App() {
         className="hidden"
       />
 
-      {tab !== "movies" ? (
+      {tab !== "movies" && tab !== "clipper" ? (
         <header className="safe-top flex items-center justify-between px-4 pb-2">
           <button type="button" onClick={() => useApp.getState().setTab("home")} aria-label="หน้าหลัก">
             <Logo className="text-[26px]" />
@@ -118,9 +121,9 @@ export function App() {
             </button>
           </div>
         </header>
-      ) : (
+      ) : tab === "movies" ? (
         <div className="safe-top" />
-      )}
+      ) : null}
       {banner ? <p className="mx-4 mb-2 rounded-lg bg-subtle px-3 py-1.5 text-center text-xs text-muted">{banner}</p> : null}
 
       <main className="min-h-0 flex-1">
@@ -129,15 +132,14 @@ export function App() {
         {tab === "tv" ? <TvView /> : null}
         {tab === "movies" ? <MoviesView /> : null}
         {tab === "search" ? <SearchView /> : null}
+        {tab === "clipper" ? <ClipperView /> : null}
         {tab === "profile" ? <ProfileView /> : null}
       </main>
 
-      {station ? (
+      {station && tab !== "clipper" ? (
         <div className="mx-3 mb-2 flex h-14 items-center gap-3 rounded-2xl bg-elevated pl-2 pr-1.5 ring-gold">
           <button type="button" onClick={() => useApp.getState().setNowOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-            <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-subtle font-display text-xs font-semibold text-gold-light">
-              {mark(station.name)}
-            </span>
+            <StationArt station={station} size="md" className="size-10 rounded-lg" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-medium">{station.name}</span>
               <span className="block truncate text-xs text-muted">{playing ? "กำลังเล่น" : "หยุดชั่วคราว"} · {station.city}</span>
@@ -155,7 +157,7 @@ export function App() {
         </div>
       ) : null}
 
-      <nav className="safe-bottom grid grid-cols-5 border-t border-line bg-bg/95 backdrop-blur" aria-label="เมนูหลัก">
+      <nav className={cn("safe-bottom grid grid-cols-5 border-t", tab === "clipper" ? "border-white/10 bg-black" : "border-line bg-bg/95 backdrop-blur")} aria-label="เมนูหลัก">
         {NAV.map(({ id, label, icon: Icon }) => {
           const selected = navTab === id;
           return (

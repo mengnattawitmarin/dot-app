@@ -13,6 +13,10 @@ export type LiveStation = {
   genre: Genre;
   urls: string[];
   fallback: StudioPreset;
+  /** FM frequency shown on the artwork, e.g. "93.0" (parsed from the name when absent) */
+  freq?: string;
+  /** "radio-browser" for stations loaded from the online directory */
+  source?: "radio-browser";
 };
 
 export type StudioStation = {
@@ -57,13 +61,21 @@ export type Title = {
   tags: Array<"new" | "popular" | "featured">;
 };
 
-export type Reel = {
+export type Clip = {
   id: string;
-  thought: string;
+  src: string;
+  /** seconds — play only this segment of a longer film, looping */
+  start?: number;
+  end?: number;
   author: string;
-  scene: SceneId;
-  src?: string;
+  caption: string;
+  /** source credit shown on the music line (CC BY attribution) */
+  credit: string;
   likes: number;
+  comments: number;
+  shares: number;
+  /** set for clips the user recorded / uploaded on this device */
+  mine?: boolean;
 };
 
 export const GENRE_LABEL: Record<Genre, string> = {
@@ -715,68 +727,23 @@ export function getTitle(id: string): Title | undefined {
   return titles.find((t) => t.id === id);
 }
 
-export const reels: Reel[] = [
-  {
-    id: "reel-1",
-    thought: "เมืองนี้ดังกว่าความคิดในหัวแค่หนึ่งเพลง",
-    author: "mira",
-    scene: "rain",
-    src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
-    likes: 128,
-  },
-  {
-    id: "reel-2",
-    thought: "พิมพ์แล้วยังไม่ส่ง เพลงเดิมวนรอบที่สาม",
-    author: "koi",
-    scene: "drive",
-    src: "https://media.w3.org/2010/05/bunny/trailer.mp4",
-    likes: 86,
-  },
-  {
-    id: "reel-3",
-    thought: "ฝนทำให้ไฟถนนดูแพงขึ้น",
-    author: "nite",
-    scene: "horizon",
-    src: "https://media.w3.org/2010/05/sintel/trailer.mp4",
-    likes: 240,
-  },
-  {
-    id: "reel-4",
-    thought: "นั่งรถคันสุดท้าย แล้วแกล้งลืมว่าต้องลง",
-    author: "bus",
-    scene: "ocean",
-    src: "https://media.w3.org/2010/05/video/movie_300.mp4",
-    likes: 64,
-  },
-  {
-    id: "reel-5",
-    thought: "ห้องมืดพอดีสำหรับคนที่ยังไม่อยากตอบ",
-    author: "film",
-    scene: "blocks",
-    likes: 41,
-  },
-  {
-    id: "reel-6",
-    thought: "เก็บความเงียบไว้เป็นเพลย์ลิสต์",
-    author: "solo",
-    scene: "grain",
-    likes: 19,
-  },
-  {
-    id: "reel-7",
-    thought: "ทุกคนดูเร่ง ยกเว้นคนที่ใส่หูฟัง",
-    author: "koi",
-    scene: "drive",
-    likes: 77,
-  },
-  {
-    id: "reel-8",
-    thought: "พรุ่งนี้ค่อยเป็นคนเก่ง วันนี้ขอแค่เพลงนี้",
-    author: "mira",
-    scene: "rain",
-    likes: 53,
-  },
+/** Short-video feed for Clipper. Segments of open films (Blender Foundation, CC BY) + CC0 samples. */
+export const clips: Clip[] = [
+  { id: "clip-bbb-morning", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", start: 12, end: 40, author: "bunnyverse", caption: "เช้าวันใหม่ในป่า ใครตื่นก่อนได้กินก่อน 🌳🐰", credit: "Big Buck Bunny", likes: 12400, comments: 318, shares: 92 },
+  { id: "clip-sintel-quest", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4", start: 95, end: 125, author: "dragonseeker", caption: "ออกเดินทางคนเดียว เพื่อตามหาเพื่อนที่หายไป 🐉 #ภารกิจ", credit: "Sintel", likes: 30500, comments: 1204, shares: 860 },
+  { id: "clip-tos-city", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", start: 182, end: 210, author: "steel.ams", caption: "อัมสเตอร์ดัมในอนาคต หุ่นยนต์เต็มเมือง 🤖⚡", credit: "Tears of Steel", likes: 8800, comments: 241, shares: 77 },
+  { id: "clip-flower", src: "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4", author: "mira", caption: "ดอกไม้บานในหนึ่งลมหายใจ 🌸 เมืองนี้ดังกว่าความคิดในหัวแค่หนึ่งเพลง", credit: "CC0", likes: 5120, comments: 88, shares: 40 },
+  { id: "clip-ed-machine", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4", start: 60, end: 90, author: "proog", caption: "โลกเครื่องจักรที่ไม่เคยหยุดหมุน ⚙️ ดูจนจบแล้วจะงง", credit: "Elephants Dream", likes: 4300, comments: 156, shares: 31 },
+  { id: "clip-bbb-prank", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", start: 170, end: 198, author: "bunnyverse", caption: "เมื่อโดนแกล้งเป็นครั้งที่สาม… ความอดทนมีขีดจำกัด 😤", credit: "Big Buck Bunny", likes: 21900, comments: 640, shares: 410 },
+  { id: "clip-sintel-trailer", src: "https://media.w3.org/2010/05/sintel/trailer.mp4", author: "nite", caption: "ฝนทำให้ไฟถนนดูแพงขึ้น ✨ ตัวอย่างที่ดูกี่รอบก็ขนลุก", credit: "Sintel", likes: 15200, comments: 402, shares: 133 },
+  { id: "clip-tos-fight", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4", start: 440, end: 468, author: "steel.ams", caption: "ฉากบู๊ที่รอมาทั้งเรื่อง 🔥", credit: "Tears of Steel", likes: 17700, comments: 520, shares: 301 },
+  { id: "clip-bunny-trailer", src: "https://media.w3.org/2010/05/bunny/trailer.mp4", author: "koi", caption: "พิมพ์แล้วยังไม่ส่ง เพลงเดิมวนรอบที่สาม 🎧", credit: "Big Buck Bunny", likes: 6400, comments: 97, shares: 25 },
+  { id: "clip-bbb-finale", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", start: 452, end: 482, author: "bunnyverse", caption: "ไคลแมกซ์! แผนเอาคืนสำเร็จ 😎 #ห้ามพลาด", credit: "Big Buck Bunny", likes: 40200, comments: 2100, shares: 1500 },
 ];
+
+export function getClip(id: string): Clip | undefined {
+  return clips.find((c) => c.id === id);
+}
 
 export function getStation(id: string): Station | undefined {
   return stations.find((s) => s.id === id);
@@ -793,8 +760,13 @@ export function getChannel(id: string): TvChannel | undefined {
   return channels.find((c) => c.id === id);
 }
 
-export function getReel(id: string): Reel | undefined {
-  return reels.find((r) => r.id === id);
+/** FM frequency from an explicit field or the station name (87.5–108). */
+export function stationFreq(station: Station): string | null {
+  if (station.kind === "live" && station.freq) return station.freq;
+  const m = station.name.match(/(?:^|[^\d.])(\d{2,3}(?:\.\d{1,2})?)(?![\d.])/);
+  if (!m?.[1]) return null;
+  const n = Number(m[1]);
+  return n >= 87.5 && n <= 108 ? m[1] : null;
 }
 
 export function mark(name: string): string {

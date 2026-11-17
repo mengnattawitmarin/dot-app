@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { channels, getChannel, getStation, getTitle, stations, titles } from "@/lib/catalog";
+import { channels, clips, getChannel, getClip, getStation, getTitle, stations, titles } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp } from "@/lib/store";
@@ -18,6 +18,7 @@ export function ProfileView() {
     ...stations.filter((s) => favorites.includes(s.id)).map((s) => ({ id: s.id, label: s.name, kind: "วิทยุ" })),
     ...channels.filter((c) => favorites.includes(c.id)).map((c) => ({ id: c.id, label: c.name, kind: "ทีวี" })),
     ...titles.filter((t) => favorites.includes(t.id)).map((t) => ({ id: t.id, label: t.name, kind: "หนัง" })),
+    ...clips.filter((c) => favorites.includes(c.id)).map((c) => ({ id: c.id, label: c.caption, kind: "คลิป" })),
   ];
   const recentItems = recent
     .map((id) => {
@@ -36,6 +37,7 @@ export function ProfileView() {
     if (s) return void playStation(s);
     if (getChannel(id)) return openChannel(id);
     if (getTitle(id)) return openTitle(id);
+    if (getClip(id)) return useApp.getState().setTab("clipper");
   }
 
   return (

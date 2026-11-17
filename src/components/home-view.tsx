@@ -4,7 +4,8 @@ import { playStation } from "@/lib/player";
 import { useApp, type TabId } from "@/lib/store";
 import { FilmIcon, MusicIcon, PlayIcon, RadioIcon, SmileIcon, TvIcon } from "@/components/icons";
 import { RadioHero } from "@/components/radio-hero";
-import { ChannelMark, Poster, SectionHeader } from "@/components/ui";
+import { Poster, SectionHeader } from "@/components/ui";
+import { ChannelArt } from "@/components/art";
 
 const CATEGORIES: Array<{ label: string; icon: typeof RadioIcon; tab: TabId; anchor?: string }> = [
   { label: "วิทยุ", icon: RadioIcon, tab: "radio" },
@@ -105,7 +106,7 @@ export function HomeView() {
         <div className="grid grid-cols-4 gap-2.5">
           {popularChannels.map((c) => (
             <button key={c.id} type="button" onClick={() => openChannel(c)} aria-label={c.name}>
-              <ChannelMark name={c.name} className="aspect-[4/3] w-full" />
+              <ChannelArt channel={c} className="aspect-[4/3] w-full" />
             </button>
           ))}
         </div>

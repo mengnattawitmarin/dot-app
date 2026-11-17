@@ -5,6 +5,9 @@ import { stations, channels, titles } from "../src/lib/catalog.ts";
 
 const TIMEOUT = 12_000;
 
+// Thai stations often geo-block or answer slowly outside Thailand (the runner is in the US),
+// so only hard failures count as dead: DNS failure, refused connection, 404/410.
+// 403/451/timeouts are "unknown" and treated as alive.
 async function probe(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT);
@@ -14,18 +17,20 @@ async function probe(url) {
       redirect: "follow",
       signal: controller.signal,
     });
-    if (res.status >= 400) return false;
-    // Read one chunk only — Icecast streams never end.
+    if (res.status === 404 || res.status === 410) return "dead";
+    if (res.status >= 400) return "unknown";
     const reader = res.body?.getReader();
     const chunk = reader ? await reader.read() : { value: undefined };
     reader?.cancel().catch(() => {});
     if (url.includes(".m3u8")) {
       const text = new TextDecoder().decode(chunk.value ?? new Uint8Array());
-      return text.includes("#EXTM3U");
+      return text.includes("#EXTM3U") ? "ok" : "dead";
     }
-    return Boolean(chunk.value?.length);
-  } catch {
-    return false;
+    return chunk.value?.length ? "ok" : "unknown";
+  } catch (error) {
+    const code = error?.cause?.code ?? "";
+    if (["ENOTFOUND", "ECONNREFUSED", "EAI_AGAIN", "CERT_HAS_EXPIRED", "ERR_TLS_CERT_ALTNAME_INVALID"].includes(code)) return "dead";
+    return "unknown";
   } finally {
     clearTimeout(timer);
     controller.abort();
@@ -34,7 +39,7 @@ async function probe(url) {
 
 async function alive(urls) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    for (const url of urls) if (await probe(url)) return true;
+    for (const url of urls) if ((await probe(url)) !== "dead") return true;
   }
   return false;
 }

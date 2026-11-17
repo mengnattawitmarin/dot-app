@@ -4,7 +4,8 @@ import { openChannel, openTitle } from "@/lib/actions";
 import { selectOffline, useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { ChevronRight, HeartIcon } from "@/components/icons";
-import { ChannelMark, LiveBadge, Poster, SectionHeader, Skyline } from "@/components/ui";
+import { LiveBadge, Poster, SectionHeader, Skyline } from "@/components/ui";
+import { ChannelArt } from "@/components/art";
 
 function useClock() {
   const [now, setNow] = useState(() => new Date());
@@ -37,7 +38,7 @@ export function TvView() {
           <div className="relative aspect-video">
             <Skyline className="absolute inset-0 h-full w-full" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
-            <ChannelMark name={featured.name} className="absolute bottom-3 left-3 size-14 bg-black/60" />
+            <ChannelArt channel={featured} size="sm" className="absolute bottom-3 left-3 h-12 w-16" />
             <span className="absolute right-3 top-3">
               <LiveBadge />
             </span>
@@ -60,7 +61,7 @@ export function TvView() {
         <div className="grid grid-cols-4 gap-2.5">
           {popular.map((c) => (
             <button key={c.id} type="button" onClick={() => openChannel(c)} aria-label={c.name} className={cn(offline && "opacity-50")}>
-              <ChannelMark name={c.name} className="aspect-[4/3] w-full" />
+              <ChannelArt channel={c} className="aspect-[4/3] w-full" />
             </button>
           ))}
         </div>
@@ -99,7 +100,7 @@ function ChannelGroup({ title, items, offline }: { title: string; items: TvChann
           return (
             <li key={item.id} className={cn("flex items-center gap-3 rounded-xl p-2", blocked && "opacity-50")}>
               <button type="button" onClick={() => openChannel(item)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-                <ChannelMark name={item.name} className="h-11 w-16 shrink-0 text-[11px]" />
+                <ChannelArt channel={item} size="sm" className="h-11 w-16 shrink-0" />
                 <span className="min-w-0">
                   <span className="block truncate text-sm font-medium">{item.name}</span>
                   <span className="block truncate text-xs text-muted">{blocked ? "ต้องใช้เน็ต" : item.blurb}</span>

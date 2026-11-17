@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { getStation, mark, stationQueue } from "@/lib/catalog";
+import { getStation, stationQueue } from "@/lib/catalog";
+import { StationArt } from "@/components/art";
 import { applyVolume, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, SkipBack, SkipForward, VolumeIcon } from "@/components/icons";
@@ -63,9 +64,7 @@ export function NowScreen() {
       </div>
 
       <div className="relative flex flex-1 flex-col items-center justify-center">
-        <div className="card-sheen grid size-52 place-items-center rounded-3xl font-display text-6xl font-bold text-gold-light">
-          {mark(station.name)}
-        </div>
+        <StationArt station={station} size="lg" className="size-56 rounded-3xl shadow-[0_20px_60px_-15px_rgba(214,168,86,0.45)]" />
         <div className="mt-7 flex items-center gap-2">
           <h2 className="text-center text-2xl font-semibold">{station.name}</h2>
           {live ? <LiveBadge /> : null}

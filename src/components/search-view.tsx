@@ -4,7 +4,8 @@ import { openChannel, openTitle } from "@/lib/actions";
 import { useApp } from "@/lib/store";
 import { SearchIcon } from "@/components/icons";
 import { StationList } from "@/components/radio-view";
-import { ChannelMark, Chip, Poster } from "@/components/ui";
+import { Chip, Poster } from "@/components/ui";
+import { ChannelArt } from "@/components/art";
 
 const SUGGEST = ["COOL", "ลูกทุ่ง", "ข่าว", "แจ๊ส", "DLTV", "Sintel"];
 
@@ -65,7 +66,7 @@ export function SearchView() {
           <div className="grid grid-cols-4 gap-2.5">
             {result.channels.map((c) => (
               <button key={c.id} type="button" onClick={() => openChannel(c)} aria-label={c.name}>
-                <ChannelMark name={c.name} className="aspect-[4/3] w-full text-[11px]" />
+                <ChannelArt channel={c} size="sm" className="aspect-[4/3] w-full" />
               </button>
             ))}
           </div>

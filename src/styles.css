@@ -122,6 +122,25 @@ input[type="range"].gold-range::-webkit-slider-thumb {
   animation: live-pulse 1.4s ease-in-out infinite;
 }
 
+@keyframes heart {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4) rotate(-12deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.15) rotate(0deg);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -110%) scale(0.9);
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;

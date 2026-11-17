@@ -204,3 +204,41 @@ export const ShareIcon = (p: IconProps) => (
     <path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" />
   </svg>
 );
+
+export const ClipIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+    <path d="M3.5 8.5h17M8 3.8l2.6 4.7M13.4 3.8 16 8.5" />
+    <path d="m10.3 11.6 4.3 2.6-4.3 2.6z" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const CommentIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 11.5a7.5 7 0 1 1 3.4 5.9L4 18.8l1-3.4A6.8 6.8 0 0 1 4 11.5z" />
+  </svg>
+);
+
+export const PlusIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+export const SendIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M20.5 3.5 10 14M20.5 3.5 14 20.5l-4-6.5-6.5-4z" />
+  </svg>
+);
+
+export const TrashIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 13h9l1-13" />
+  </svg>
+);
+
+export const CloseIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </svg>
+);

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { loadValue, saveValue } from "@/lib/storage";
 
-export type TabId = "home" | "radio" | "tv" | "movies" | "search" | "profile";
+export type TabId = "home" | "radio" | "clipper" | "tv" | "movies" | "search" | "profile";
 export type Output = "radio" | "tv" | "video" | "idle";
 
 export type NowPlaying = { kind: "station"; id: string } | null;

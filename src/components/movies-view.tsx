@@ -3,22 +3,20 @@ import { titles, type Title } from "@/lib/catalog";
 import { openTitle } from "@/lib/actions";
 import { useApp } from "@/lib/store";
 import { ChevronLeft, PlayIcon, StarIcon } from "@/components/icons";
-import { ReelsView } from "@/components/reels-view";
 import { Chip, Poster, SectionHeader } from "@/components/ui";
 
-type Filter = "featured" | "new" | "popular" | "reels";
+type Filter = "featured" | "new" | "popular";
 
 const FILTERS: Array<{ id: Filter; label: string }> = [
   { id: "featured", label: "แนะนำ" },
   { id: "new", label: "มาใหม่" },
   { id: "popular", label: "ยอดนิยม" },
-  { id: "reels", label: "คิดสั้น" },
 ];
 
 export function MoviesView() {
   const [filter, setFilter] = useState<Filter>("featured");
   const list: Title[] =
-    filter === "reels" ? [] : titles.filter((t) => t.tags.includes(filter as Title["tags"][number]));
+    titles.filter((t) => t.tags.includes(filter as Title["tags"][number]));
   const hero = list[0] ?? titles[0];
   const today = [...titles].sort((a, b) => b.rating - a.rating);
 
@@ -41,13 +39,10 @@ export function MoviesView() {
             {f.label}
           </Chip>
         ))}
+        <Chip onClick={() => useApp.getState().setTab("clipper")}>คลิปสั้น ▸</Chip>
       </div>
 
-      {filter === "reels" ? (
-        <div className="min-h-0 flex-1">
-          <ReelsView active />
-        </div>
-      ) : (
+      {(
         <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-4 pb-6">
           {hero ? (
             <button type="button" onClick={() => openTitle(hero.id)} className="rise relative block w-full text-left">

@@ -262,18 +262,3 @@ export function Skyline({ className }: { className?: string }) {
     </svg>
   );
 }
-
-/** Channel tile — a typographic mark in the channel's colour, never the broadcaster's logo. */
-export function ChannelMark({ name, className }: { name: string; className?: string }) {
-  const short = name.replace(/\s*(HD|2HD)$/i, "");
-  return (
-    <span
-      className={cn(
-        "grid place-items-center rounded-xl bg-subtle px-1 text-center font-display text-[13px] font-semibold leading-tight text-gold-light ring-gold",
-        className,
-      )}
-    >
-      {short}
-    </span>
-  );
-}
