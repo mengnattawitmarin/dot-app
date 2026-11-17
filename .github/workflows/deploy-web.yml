@@ -37,6 +37,21 @@ jobs:
           VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
 
+      - name: Check backend connection
+        continue-on-error: true
+        # Writes dist/backend-check.json so the result can be read from the deployed site.
+        run: |
+          URL="${{ vars.SUPABASE_URL }}"; KEY="${{ vars.SUPABASE_ANON_KEY }}"
+          URL="${URL:-$(grep -o 'https://[a-z0-9]*\.supabase\.co' src/lib/config.ts | head -1)}"
+          KEY="${KEY:-$(grep -o 'sb_publishable_[A-Za-z0-9_-]*' src/lib/config.ts | head -1)}"
+          REST=$(curl -s -o /tmp/rest.txt -w "%{http_code}" "$URL/rest/v1/clips?select=id&limit=1" -H "apikey: $KEY" || echo 000)
+          BUCKET=$(curl -s -o /dev/null -w "%{http_code}" "$URL/storage/v1/bucket/clips" -H "apikey: $KEY" -H "Authorization: Bearer $KEY" || echo 000)
+          AUTH=$(curl -s "$URL/auth/v1/settings" -H "apikey: $KEY" || echo '{}')
+          AUTOCONFIRM=$(echo "$AUTH" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{console.log(JSON.parse(s).mailer_autoconfirm)}catch{console.log("unknown")}})')
+          printf '{"checkedAt":"%s","rest_clips":%s,"rest_body":%s,"storage_bucket":%s,"email_autoconfirm":"%s"}\n' \
+            "$(date -u +%FT%TZ)" "$REST" "$(head -c 300 /tmp/rest.txt | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.stringify(s)))')" "$BUCKET" "$AUTOCONFIRM" > dist/backend-check.json
+          cat dist/backend-check.json
+
       - name: Publish to gh-pages
         uses: peaceiris/actions-gh-pages@v4
         with:
