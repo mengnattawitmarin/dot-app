@@ -2,6 +2,7 @@ import { getStation, stationQueue } from "@/lib/catalog";
 import { pauseRadio, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { renderArtwork, splitSong } from "@/lib/now-playing";
+import { getEpisode } from "@/lib/stories";
 
 /**
  * Lock-screen / notification / Control Center controls via the Media Session API.
@@ -34,6 +35,22 @@ export function setupMediaSession() {
   let lastSong: string | null = null;
   const sync = () => {
     const s = useApp.getState();
+    if (s.now?.kind === "episode") {
+      const item = getEpisode(s.now.id);
+      if (item && s.now.id !== lastId) {
+        lastId = s.now.id;
+        lastSong = null;
+        const img = item.episode.image || item.show.image;
+        ms.metadata = new MediaMetadata({
+          title: item.episode.title,
+          artist: item.show.name,
+          album: "Do.T เรื่องเล่า",
+          artwork: img ? [{ src: img, sizes: "600x600" }] : artwork,
+        });
+      }
+      ms.playbackState = s.playing && s.output === "radio" ? "playing" : "paused";
+      return;
+    }
     const station = s.now ? getStation(s.now.id) : undefined;
     if (!station) {
       ms.playbackState = "none";

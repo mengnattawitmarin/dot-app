@@ -74,6 +74,8 @@ public class MediaPlaybackService extends Service {
                 intent.getStringExtra("artist"),
                 intent.getBooleanExtra("playing", false),
                 intent.getStringExtra("artwork"));
+            String artUrl = intent.getStringExtra("artworkUrl");
+            if (artUrl != null) loadArtworkUrl(artUrl);
         } else if (ACTION_TOGGLE.equals(action)) {
             NowPlayingPlugin.emit(playing ? "pause" : "play");
         } else if (ACTION_NEXT.equals(action)) {
@@ -120,6 +122,30 @@ public class MediaPlaybackService extends Service {
                 PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1f)
             .build());
         showNotification();
+    }
+
+    /** Download cover art (podcast episodes) off the main thread, then refresh the card. */
+    void loadArtworkUrl(String url) {
+        if (url == null || url.isEmpty()) return;
+        new Thread(() -> {
+            java.net.HttpURLConnection c = null;
+            try {
+                c = (java.net.HttpURLConnection) new java.net.URL(url).openConnection();
+                c.setConnectTimeout(8000);
+                c.setReadTimeout(8000);
+                c.setInstanceFollowRedirects(true);
+                Bitmap raw = BitmapFactory.decodeStream(c.getInputStream());
+                if (raw == null) return;
+                int size = Math.min(512, Math.max(raw.getWidth(), raw.getHeight()));
+                Bitmap scaled = Bitmap.createScaledBitmap(raw, size, size, true);
+                artwork = scaled;
+                applyUpdate(null, null, playing, null);
+            } catch (Exception ignored) {
+                // keep the previous artwork
+            } finally {
+                if (c != null) c.disconnect();
+            }
+        }).start();
     }
 
     private PendingIntent serviceIntent(String action, int code) {

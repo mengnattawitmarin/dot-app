@@ -3,6 +3,7 @@ import { getStation, stationQueue } from "@/lib/catalog";
 import { StationArt } from "@/components/art";
 import { splitSong } from "@/lib/now-playing";
 import { SongActions } from "@/components/song-actions";
+import { EpisodeNow } from "@/components/episode-now";
 import { applyVolume, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, SkipBack, SkipForward, VolumeIcon } from "@/components/icons";
@@ -38,6 +39,7 @@ export function NowScreen() {
   }, [sleepEndsAt]);
 
   if (!open || !now) return null;
+  if (now.kind === "episode") return <EpisodeNow episodeKey={now.id} />;
   const station = getStation(now.id);
   if (!station) return null;
   const saved = favorites.includes(station.id);

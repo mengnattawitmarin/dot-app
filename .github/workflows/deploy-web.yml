@@ -6,6 +6,8 @@ name: Deploy web
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: "41 22 * * *" # 05:41 Bangkok — refresh story/podcast episodes daily
   workflow_dispatch:
   workflow_call:
 
@@ -30,6 +32,10 @@ jobs:
 
       - name: Install
         run: npm install --no-audit --no-fund
+
+      - name: Refresh stories catalogue (podcasts.json)
+        continue-on-error: true
+        run: node scripts/fetch-podcasts.mjs
 
       - name: Build
         run: npm run build

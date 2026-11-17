@@ -15,6 +15,9 @@ import { SignInSheet } from "@/components/account";
 import { NoticesSheet, useUnreadCount } from "@/components/notices-sheet";
 import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
 import { ClipperView } from "@/components/clipper-view";
+import { StoriesView, CoverImage } from "@/components/stories-view";
+import { getEpisode } from "@/lib/stories";
+import { useEpisodeUi } from "@/lib/episode-player";
 import { HomeView } from "@/components/home-view";
 import { MoviesView } from "@/components/movies-view";
 import { NowScreen } from "@/components/now-screen";
@@ -46,7 +49,8 @@ export function App() {
   const offline = useApp(selectOffline);
   const activeTitle = useApp((s) => s.activeTitle);
   const activeChannel = useApp((s) => s.activeChannel);
-  const station = now ? getStation(now.id) : undefined;
+  const station = now?.kind === "station" ? getStation(now.id) : undefined;
+  const episode = now?.kind === "episode" ? getEpisode(now.id) : undefined;
   const unread = useUnreadCount();
   const song = splitSong(useApp((s) => s.songTitle));
   const title = activeTitle ? getTitle(activeTitle) : undefined;
@@ -126,7 +130,7 @@ export function App() {
         className="hidden"
       />
 
-      {tab !== "movies" && tab !== "clipper" ? (
+      {tab !== "movies" && tab !== "clipper" && tab !== "stories" ? (
         <header className="safe-top flex items-center justify-between px-4 pb-2">
           <button type="button" onClick={() => useApp.getState().setTab("home")} aria-label="หน้าหลัก">
             <Logo className="text-[26px]" />
@@ -150,7 +154,7 @@ export function App() {
             </button>
           </div>
         </header>
-      ) : tab === "movies" ? (
+      ) : tab === "movies" || tab === "stories" ? (
         <div className="safe-top" />
       ) : null}
       {banner ? <p className="mx-4 mb-2 rounded-lg bg-subtle px-3 py-1.5 text-center text-xs text-muted">{banner}</p> : null}
@@ -162,8 +166,11 @@ export function App() {
         {tab === "movies" ? <MoviesView /> : null}
         {tab === "search" ? <SearchView /> : null}
         {tab === "clipper" ? <ClipperView /> : null}
+        {tab === "stories" ? <StoriesView /> : null}
         {tab === "profile" ? <ProfileView /> : null}
       </main>
+
+      {episode && tab !== "clipper" ? <EpisodeMini item={episode} playing={playing} /> : null}
 
       {station && tab !== "clipper" ? (
         <div className="mx-3 mb-2 flex h-14 items-center gap-3 rounded-2xl bg-elevated pl-2 pr-1.5 ring-gold">
@@ -257,6 +264,35 @@ export function App() {
           <p className="rise rounded-full bg-gold-grad px-4 py-2 text-sm font-medium text-accent-fg shadow-lg">{toastMsg}</p>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function EpisodeMini({ item, playing }: { item: NonNullable<ReturnType<typeof getEpisode>>; playing: boolean }) {
+  const { position, duration } = useEpisodeUi();
+  const total = duration || item.episode.duration;
+  return (
+    <div className="relative mx-3 mb-2 overflow-hidden rounded-2xl bg-elevated ring-gold">
+      <div className="flex h-14 items-center gap-3 pl-2 pr-1.5">
+        <button type="button" onClick={() => useApp.getState().setNowOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+          <CoverImage src={item.episode.image || item.show.image} name={item.show.name} className="size-10 rounded-lg" />
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-medium">{item.episode.title}</span>
+            <span className="block truncate text-xs text-muted">{item.show.name}</span>
+          </span>
+        </button>
+        <button
+          type="button"
+          aria-label={playing ? "หยุดชั่วคราว" : "เล่น"}
+          onClick={() => void toggleRadio()}
+          className="grid size-10 place-items-center rounded-full bg-gold-grad text-accent-fg"
+        >
+          {playing ? <PauseIcon size={18} /> : <PlayIcon size={18} className="translate-x-px" />}
+        </button>
+      </div>
+      <span className="absolute inset-x-0 bottom-0 h-0.5 bg-line">
+        <span className="block h-full bg-gold" style={{ width: `${total ? Math.min(100, (position / total) * 100) : 0}%` }} />
+      </span>
     </div>
   );
 }

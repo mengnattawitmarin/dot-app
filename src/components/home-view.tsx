@@ -2,8 +2,10 @@ import { channels, stations, titles, type StudioStation } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp, type TabId } from "@/lib/store";
-import { FilmIcon, MusicIcon, PlayIcon, RadioIcon, SmileIcon, TvIcon } from "@/components/icons";
+import { FilmIcon, HeadphonesIcon, MusicIcon, PlayIcon, RadioIcon, SmileIcon, TvIcon } from "@/components/icons";
 import { RadioHero } from "@/components/radio-hero";
+import { FavoriteRow } from "@/components/radio-view";
+import { StoriesRow } from "@/components/stories-row";
 import { Poster, SectionHeader } from "@/components/ui";
 import { ChannelArt } from "@/components/art";
 
@@ -11,7 +13,7 @@ const CATEGORIES: Array<{ label: string; icon: typeof RadioIcon; tab: TabId; anc
   { label: "วิทยุ", icon: RadioIcon, tab: "radio" },
   { label: "ทีวี", icon: TvIcon, tab: "tv" },
   { label: "หนัง", icon: FilmIcon, tab: "movies" },
-  { label: "เพลง", icon: MusicIcon, tab: "home", anchor: "playlists" },
+  { label: "เรื่องเล่า", icon: HeadphonesIcon, tab: "stories" },
   { label: "บันเทิง", icon: SmileIcon, tab: "movies" },
 ];
 
@@ -30,6 +32,9 @@ export function HomeView() {
   const playlists = stations.filter((s): s is StudioStation => s.kind === "studio");
   const popularChannels = channels.filter((c) => c.popular);
   const setTab = useApp((s) => s.setTab);
+  const favorites = useApp((s) => s.favorites);
+  useApp((s) => s.catalogVersion);
+  const favStations = favorites.map((id) => stations.find((s) => s.id === id)).filter((s): s is NonNullable<typeof s> => Boolean(s));
 
   return (
     <div className="no-scrollbar h-full overflow-y-auto px-4 pb-6">
@@ -67,6 +72,8 @@ export function HomeView() {
       <div className="mt-6">
         <RadioHero compact />
       </div>
+      {favStations.length > 0 ? <FavoriteRow list={favStations} /> : null}
+      <StoriesRow />
 
       <section className="mt-7">
         <SectionHeader title="กำลังฮิต" onAction={() => setTab("movies")} />

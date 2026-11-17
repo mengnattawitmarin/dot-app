@@ -4,6 +4,8 @@ import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp } from "@/lib/store";
 import { shareContent } from "@/lib/share";
+import { getEpisode, useStories } from "@/lib/stories";
+import { playEpisode } from "@/lib/episode-player";
 import { cn } from "@/lib/cn";
 import { ChevronRight, MoonIcon, ShareIcon, WifiOffIcon } from "@/components/icons";
 import { AccountCard, PushToggle } from "@/components/account";
@@ -21,6 +23,7 @@ export function ProfileView() {
     ...channels.filter((c) => favorites.includes(c.id)).map((c) => ({ id: c.id, label: c.name, kind: "ทีวี" })),
     ...titles.filter((t) => favorites.includes(t.id)).map((t) => ({ id: t.id, label: t.name, kind: "หนัง" })),
     ...clips.filter((c) => favorites.includes(c.id)).map((c) => ({ id: c.id, label: c.caption, kind: "คลิป" })),
+    ...useStories.getState().shows.filter((s) => favorites.includes(s.id)).map((s) => ({ id: s.id, label: s.name, kind: "เรื่องเล่า" })),
   ];
   const recentItems = recent
     .map((id) => {
@@ -30,6 +33,8 @@ export function ProfileView() {
       if (c) return { id, label: c.name, kind: "ทีวี" };
       const t = getTitle(id);
       if (t) return { id, label: t.name, kind: "หนัง" };
+      const ep = getEpisode(id);
+      if (ep) return { id, label: ep.episode.title, kind: "เรื่องเล่า" };
       return null;
     })
     .filter((x): x is { id: string; label: string; kind: string } => Boolean(x));
@@ -40,6 +45,13 @@ export function ProfileView() {
     if (getChannel(id)) return openChannel(id);
     if (getTitle(id)) return openTitle(id);
     if (getClip(id)) return useApp.getState().setTab("clipper");
+    if (id.startsWith("pod-")) {
+      useApp.getState().setTab("stories");
+      window.setTimeout(() => window.dispatchEvent(new CustomEvent("dot:open-show", { detail: id })), 50);
+      return;
+    }
+    const ep = getEpisode(id);
+    if (ep) return void playEpisode(id);
   }
 
   return (

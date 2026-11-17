@@ -264,3 +264,11 @@ export const ExternalIcon = (p: IconProps) => (
     <path d="M18 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1H10" />
   </svg>
 );
+
+export const HeadphonesIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+    <rect x="3.5" y="13.5" width="4.5" height="7" rx="1.6" />
+    <rect x="16" y="13.5" width="4.5" height="7" rx="1.6" />
+  </svg>
+);

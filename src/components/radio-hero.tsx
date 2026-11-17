@@ -1,7 +1,7 @@
 import { getStation } from "@/lib/catalog";
 import { playStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
-import { MusicIcon, PauseIcon, PlayIcon } from "@/components/icons";
+import { HeartIcon, MusicIcon, PauseIcon, PlayIcon } from "@/components/icons";
 import { splitSong } from "@/lib/now-playing";
 import { SongActions } from "@/components/song-actions";
 import { LiveBadge, Waveform } from "@/components/ui";
@@ -43,6 +43,7 @@ export function RadioHero({ compact = false }: { compact?: boolean }) {
   const songRaw = useApp((s) => s.songTitle); // select the string, not a new object, to avoid re-render loops
   const song = isCurrent ? splitSong(songRaw) : null;
   const live = station?.kind === "live";
+  const saved = useApp((s) => (station ? s.favorites.includes(station.id) : false));
 
   function onPlay() {
     if (!station) return;
@@ -66,7 +67,20 @@ export function RadioHero({ compact = false }: { compact?: boolean }) {
         <p className="mt-1.5 max-w-[60%] text-xs text-muted">สถานีไทย สถานีนอก และสตรีมออนไลน์</p>
 
         <p className="mt-5 text-[11px] text-faint">{isCurrent && playing ? "กำลังออกอากาศ" : "พร้อมออกอากาศ"}</p>
-        <p className="truncate text-sm font-medium text-gold-light">{station?.name}</p>
+        <div className="flex items-center gap-2">
+          <p className="min-w-0 truncate text-sm font-medium text-gold-light">{station?.name}</p>
+          {station ? (
+            <button
+              type="button"
+              onClick={() => useApp.getState().toggleFavorite(station.id)}
+              aria-label={saved ? "เอาออกจากสถานีโปรด" : "เพิ่มเป็นสถานีโปรด"}
+              aria-pressed={saved}
+              className={saved ? "grid size-8 shrink-0 place-items-center text-gold" : "grid size-8 shrink-0 place-items-center text-muted"}
+            >
+              <HeartIcon size={18} filled={saved} />
+            </button>
+          ) : null}
+        </div>
         {song ? (
           <p className="rise mt-1 flex min-w-0 items-center gap-1.5 text-[13px] text-fg">
             <MusicIcon size={14} className="shrink-0 text-gold" />

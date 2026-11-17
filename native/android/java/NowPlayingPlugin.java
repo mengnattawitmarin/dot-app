@@ -36,18 +36,21 @@ public class NowPlayingPlugin extends Plugin {
         String artist = call.getString("artist", "");
         boolean playing = Boolean.TRUE.equals(call.getBoolean("playing", false));
         String artwork = call.getString("artwork", null);
+        String artworkUrl = call.getString("artworkUrl", null);
 
         MediaPlaybackService running = MediaPlaybackService.instance;
         if (running != null) {
             // Already running: update in place (no background foreground-service start needed).
             running.applyUpdate(title, artist, playing, artwork);
+            if (artworkUrl != null) running.loadArtworkUrl(artworkUrl);
         } else if (playing) {
             Intent i = new Intent(getContext(), MediaPlaybackService.class)
                 .setAction(MediaPlaybackService.ACTION_UPDATE)
                 .putExtra("title", title)
                 .putExtra("artist", artist)
                 .putExtra("playing", true)
-                .putExtra("artwork", artwork);
+                .putExtra("artwork", artwork)
+                .putExtra("artworkUrl", artworkUrl);
             try {
                 ContextCompat.startForegroundService(getContext(), i);
             } catch (IllegalStateException e) {

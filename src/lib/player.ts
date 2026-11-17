@@ -1,6 +1,7 @@
 import { getStation, getStudioByPreset, type Station } from "@/lib/catalog";
 import { studio } from "@/lib/engine";
 import { selectOffline, useApp } from "@/lib/store";
+import { isEpisodeActive, pauseEpisode, setEpisodeVolume, skipEpisode, stopEpisodeForRadio, toggleEpisode } from "@/lib/episode-player";
 
 let audio: HTMLAudioElement | null = null;
 let urls: string[] = [];
@@ -117,6 +118,7 @@ export async function playStation(station: Station) {
     useApp.getState().toast(`ไม่มีสัญญาณ — เปิด ${fallback.name}`);
     return playStation(fallback);
   }
+  stopEpisodeForRadio();
   const token = ++playToken;
   activeStation = station;
   const app = useApp.getState();
@@ -162,6 +164,7 @@ export async function playStation(station: Station) {
 }
 
 export async function toggleRadio() {
+  if (isEpisodeActive()) return toggleEpisode();
   const { playing, now, output } = useApp.getState();
   if (!now || output !== "radio") {
     if (now?.kind === "station") {
@@ -191,12 +194,14 @@ export function currentStreamUrl(): string | null {
 }
 
 export function pauseRadio() {
+  pauseEpisode();
   audio?.pause();
   if (studio.isRunning()) studio.pause();
   if (useApp.getState().output === "radio") useApp.getState().setPlaying(false);
 }
 
 export function stopForOtherOutput() {
+  pauseEpisode();
   destroyRadioHls();
   audio?.pause();
   studio.stop();
@@ -209,10 +214,13 @@ export function stopForOtherOutput() {
 export function applyVolume() {
   const level = audibleVolume();
   if (audio) audio.volume = level;
+  setEpisodeVolume(level);
   studio.setVolume(level);
 }
 
 export async function stepStation(direction: 1 | -1, list: Station[]) {
+  // For story episodes, "next / previous" means skip forward 30 s / back 15 s.
+  if (isEpisodeActive()) return skipEpisode(direction === 1 ? 30 : -15);
   if (list.length === 0) return;
   const current = useApp.getState().now?.id;
   const index = Math.max(0, list.findIndex((station) => station.id === current));

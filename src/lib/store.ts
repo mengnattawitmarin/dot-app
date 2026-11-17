@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { loadValue, saveValue } from "@/lib/storage";
 
-export type TabId = "home" | "radio" | "clipper" | "tv" | "movies" | "search" | "profile";
+export type TabId = "home" | "radio" | "clipper" | "tv" | "movies" | "stories" | "search" | "profile";
 export type Output = "radio" | "tv" | "video" | "idle";
 
-export type NowPlaying = { kind: "station"; id: string } | null;
+/** station id, or "<showId>:<episodeId>" for a story episode */
+export type NowPlaying = { kind: "station"; id: string } | { kind: "episode"; id: string } | null;
 
 type Prefs = {
   favorites: string[];

@@ -3,13 +3,14 @@ import { getStation, mark, stationFreq, stationQueue, type Station } from "@/lib
 import { currentStreamUrl, pauseRadio, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { hashPalette, STUDIO_PALETTE } from "@/components/art";
+import { getEpisode } from "@/lib/stories";
 
 /**
  * Lock-screen / notification player on Android (native MediaPlaybackService, see native/android).
  * iOS and the web use the Media Session API in media-session.ts instead.
  */
 type NowPlayingPlugin = {
-  update(options: { title: string; artist: string; playing: boolean; artwork?: string }): Promise<void>;
+  update(options: { title: string; artist: string; playing: boolean; artwork?: string; artworkUrl?: string }): Promise<void>;
   clear(): Promise<void>;
   watchMetadata(options: { url: string }): Promise<void>;
   stopMetadata(): Promise<void>;
@@ -127,8 +128,24 @@ export function setupNowPlaying() {
 
   const sync = () => {
     const s = useApp.getState();
-    const station = s.now ? getStation(s.now.id) : undefined;
     const playing = s.playing && s.output === "radio";
+    if (s.now?.kind === "episode") {
+      const item = getEpisode(s.now.id);
+      if (!item || (s.now.id === lastId && playing === lastPlaying)) return;
+      const changed = s.now.id !== lastId;
+      lastId = s.now.id;
+      lastPlaying = playing;
+      void NowPlaying.update({
+        title: item.episode.title,
+        artist: item.show.name,
+        playing,
+        artworkUrl: changed ? item.episode.image || item.show.image : undefined,
+      }).catch(() => {
+        lastId = null;
+      });
+      return;
+    }
+    const station = s.now ? getStation(s.now.id) : undefined;
     if (!station || s.output === "tv" || s.output === "video") {
       if (lastId !== null) void NowPlaying.clear().catch(() => undefined);
       lastId = null;
