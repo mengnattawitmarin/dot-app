@@ -1,7 +1,7 @@
 {
   "name": "dot-app",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Do.T — Radio · TV · Entertainment for Android & iPhone (Capacitor)",
   "scripts": {

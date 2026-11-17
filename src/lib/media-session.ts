@@ -1,6 +1,7 @@
 import { getStation, stationQueue } from "@/lib/catalog";
 import { pauseRadio, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
+import { renderArtwork } from "@/lib/now-playing";
 
 /**
  * Lock-screen / notification / Control Center controls via the Media Session API.
@@ -39,11 +40,12 @@ export function setupMediaSession() {
     }
     if (station.id !== lastId) {
       lastId = station.id;
+      const art = renderArtwork(station);
       ms.metadata = new MediaMetadata({
         title: station.name,
         artist: station.kind === "live" ? `${station.city} · สด` : "Do.T สตูดิโอในเครื่อง",
         album: "Do.T RADIO",
-        artwork,
+        artwork: art ? [{ src: `data:image/jpeg;base64,${art}`, sizes: "512x512", type: "image/jpeg" }, ...artwork] : artwork,
       });
     }
     ms.playbackState = s.playing && s.output === "radio" ? "playing" : "paused";

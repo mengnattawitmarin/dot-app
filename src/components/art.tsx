@@ -17,7 +17,7 @@ const PALETTES: Array<[string, string, string]> = [
   ["#ffa3cf", "#b02f76", "#28061a"], // rose
 ];
 
-const STUDIO_PALETTE: Record<StudioPreset, [string, string, string]> = {
+export const STUDIO_PALETTE: Record<StudioPreset, [string, string, string]> = {
   "night-drive": ["#b9a3ff", "#3b2a5e", "#120c1f"],
   loft: ["#ffc590", "#6a3d1e", "#1a0e06"],
   focus: ["#93d9ee", "#1f4553", "#071317"],
