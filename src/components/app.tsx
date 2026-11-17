@@ -54,7 +54,18 @@ export function App() {
 
   useEffect(() => {
     void useApp.getState().hydrate().then(applyVolume);
-    void loadRemote().then(loadThaiStations);
+    void loadRemote()
+      .then(loadThaiStations)
+      .then(() => {
+        // Shared link: ?station=<id> opens that station ready to play (autoplay needs a tap).
+        const id = new URLSearchParams(window.location.search).get("station");
+        if (!id || !getStation(id)) return;
+        const s = useApp.getState();
+        s.setTab("radio");
+        s.setNow({ kind: "station", id });
+        s.setNowOpen(true);
+        window.history.replaceState(null, "", window.location.pathname);
+      });
     watchFavorites();
     void initAuth(() => {
       void pullFavorites();

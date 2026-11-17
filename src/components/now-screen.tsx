@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getStation, stationQueue } from "@/lib/catalog";
 import { StationArt } from "@/components/art";
 import { splitSong } from "@/lib/now-playing";
+import { SongActions } from "@/components/song-actions";
 import { applyVolume, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, SkipBack, SkipForward, VolumeIcon } from "@/components/icons";
@@ -81,8 +82,11 @@ export function NowScreen() {
               <p className="text-[10px] tracking-[0.25em] text-gold">กำลังเล่นเพลง</p>
               <p className="mt-1 line-clamp-2 text-lg font-semibold leading-snug">{song.title}</p>
               {song.artist ? <p className="truncate text-sm text-muted">{song.artist}</p> : null}
+              <SongActions station={station} song={song} />
             </div>
-          ) : null;
+          ) : (
+            <SongActions station={station} song={null} />
+          );
         })()}
         <Waveform active={playing} live={live} className="mt-8 w-full" height={56} />
       </div>

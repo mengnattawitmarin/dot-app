@@ -257,3 +257,10 @@ export const GlobeIcon = (p: IconProps) => (
     <path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5S9.5 6.1 12 3.5z" />
   </svg>
 );
+
+export const ExternalIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M14 4.5h5.5V10M19.5 4.5 11 13" />
+    <path d="M18 14v4.5a1 1 0 0 1-1 1H5.5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1H10" />
+  </svg>
+);

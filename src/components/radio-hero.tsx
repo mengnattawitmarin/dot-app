@@ -3,6 +3,7 @@ import { playStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { MusicIcon, PauseIcon, PlayIcon } from "@/components/icons";
 import { splitSong } from "@/lib/now-playing";
+import { SongActions } from "@/components/song-actions";
 import { LiveBadge, Waveform } from "@/components/ui";
 
 /** Abstract studio-mic artwork (gold rim light), drawn in SVG. */
@@ -74,6 +75,11 @@ export function RadioHero({ compact = false }: { compact?: boolean }) {
               {song.artist ? <span className="text-muted"> · {song.artist}</span> : null}
             </span>
           </p>
+        ) : null}
+        {song && station ? (
+          <div className="relative mt-2">
+            <SongActions station={station} song={song} compact />
+          </div>
         ) : null}
         <Waveform active={isCurrent && playing} live={live} className="mt-2" />
         <div className="mt-3 flex justify-center">

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/supabase";
 import { askSignIn } from "@/components/account";
 import { pauseRadio } from "@/lib/player";
 import { REMOTE_BASE } from "@/lib/remote";
+import { shareContent } from "@/lib/share";
 import { loadValue, saveValue } from "@/lib/storage";
 import { selectOffline, useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
@@ -311,16 +312,7 @@ function ClipItem({
   }
 
   async function share() {
-    const text = `${clip.caption} — ดูบน Do.T`;
-    try {
-      if (navigator.share) await navigator.share({ title: "Do.T Clipper", text, url: REMOTE_BASE });
-      else {
-        await navigator.clipboard.writeText(`${text} ${REMOTE_BASE}`);
-        useApp.getState().toast("คัดลอกลิงก์แล้ว");
-      }
-    } catch {
-      /* dismissed */
-    }
+    await shareContent({ title: "Do.T Clipper", text: `🎬 ${clip.caption} — ดูบน Do.T`, url: REMOTE_BASE });
   }
 
   return (

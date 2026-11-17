@@ -3,6 +3,7 @@ import { channels, clips, getChannel, getClip, getStation, getTitle, stations, t
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp } from "@/lib/store";
+import { shareContent } from "@/lib/share";
 import { cn } from "@/lib/cn";
 import { ChevronRight, MoonIcon, ShareIcon, WifiOffIcon } from "@/components/icons";
 import { AccountCard, PushToggle } from "@/components/account";
@@ -180,16 +181,7 @@ function SyncCard() {
   const [input, setInput] = useState("");
 
   async function share() {
-    const code = encodeSync(favorites);
-    try {
-      if (navigator.share) await navigator.share({ title: "รายการโปรด Do.T", text: code });
-      else {
-        await navigator.clipboard.writeText(code);
-        useApp.getState().toast("คัดลอกโค้ดแล้ว");
-      }
-    } catch {
-      /* share sheet dismissed */
-    }
+    await shareContent({ title: "รายการโปรด Do.T", text: encodeSync(favorites) });
   }
 
   function apply() {
