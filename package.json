@@ -1,7 +1,7 @@
 {
   "name": "dot-app",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "type": "module",
   "description": "Do.T — Radio · TV · Entertainment for Android & iPhone (Capacitor)",
   "scripts": {
@@ -14,15 +14,17 @@
     "ios": "npm run build && cap sync ios && cap open ios",
     "native:add": "cap add android && cap add ios && node scripts/patch-native.mjs",
     "native:patch": "node scripts/patch-native.mjs",
-    "assets": "capacitor-assets generate --iconBackgroundColor '#0b0a08' --splashBackgroundColor '#0b0a08'"
+    "assets": "capacitor-assets generate --iconBackgroundColor '#0b0a08' --splashBackgroundColor '#0b0a08'",
+    "check:streams": "node --experimental-strip-types scripts/check-streams.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^7.2.0",
-    "@capacitor/app": "^7.0.1",
+    "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.2.0",
     "@capacitor/ios": "^7.2.0",
-    "@capacitor/splash-screen": "^7.0.1",
-    "@capacitor/status-bar": "^7.0.1",
+    "@capacitor/preferences": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
     "clsx": "^2.1.1",
     "hls.js": "^1.5.20",
     "react": "^19.1.0",

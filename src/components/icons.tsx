@@ -189,3 +189,18 @@ export const GridIcon = (p: IconProps) => (
     <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
   </svg>
 );
+
+export const CastIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 8V6a1.5 1.5 0 0 1 1.5-1.5h15A1.5 1.5 0 0 1 21 6v12a1.5 1.5 0 0 1-1.5 1.5H14" />
+    <path d="M3 12a8 8 0 0 1 8 8M3 16a4 4 0 0 1 4 4" />
+    <path d="M3 20h.01" strokeWidth={2.6} />
+  </svg>
+);
+
+export const ShareIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5v11M7.5 8 12 3.5 16.5 8" />
+    <path d="M5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h11A1.5 1.5 0 0 0 19 19v-6.5" />
+  </svg>
+);

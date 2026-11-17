@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/components/app";
 import { setupNative } from "@/lib/native";
+import { setupMediaSession } from "@/lib/media-session";
 import "./styles.css";
 
 const root = document.getElementById("root");
@@ -13,3 +14,4 @@ if (root) {
   );
 }
 void setupNative();
+setupMediaSession();

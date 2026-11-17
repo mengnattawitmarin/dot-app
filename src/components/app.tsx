@@ -4,6 +4,7 @@ import { closeChannel, closeTitle, openChannel } from "@/lib/actions";
 import { applyVolume, bindAudio, pauseRadio, playStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp, type TabId } from "@/lib/store";
 import { cn } from "@/lib/cn";
+import { loadRemote } from "@/lib/remote";
 import { BellIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
 import { HomeView } from "@/components/home-view";
 import { MoviesView } from "@/components/movies-view";
@@ -25,6 +26,7 @@ const NAV: Array<{ id: TabId; label: string; icon: typeof HomeIcon }> = [
 
 export function App() {
   const tab = useApp((s) => s.tab);
+  useApp((s) => s.catalogVersion); // re-render screens when the remote catalogue lands
   const now = useApp((s) => s.now);
   const playing = useApp((s) => s.playing && s.output === "radio");
   const toastMsg = useApp((s) => s.toastMsg);
@@ -40,8 +42,8 @@ export function App() {
   const channel = activeChannel ? getChannel(activeChannel) : undefined;
 
   useEffect(() => {
-    useApp.getState().hydrate();
-    applyVolume();
+    void useApp.getState().hydrate().then(applyVolume);
+    void loadRemote();
     const sync = () => useApp.getState().setOnline(navigator.onLine);
     const wentOffline = () => {
       useApp.getState().setOnline(false);

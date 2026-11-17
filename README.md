@@ -3,6 +3,9 @@
 ฟัง · ดู · สนุก ครบจบในที่เดียว — แอปวิทยุ ทีวีสด และหนัง สำหรับ **Android และ iPhone**
 สร้างด้วย React + Vite แล้วห่อเป็นแอปเนทีฟด้วย [Capacitor](https://capacitorjs.com)
 
+**🌐 เว็บ:** https://mengnattawitmarin.github.io/dot-app/
+**📱 Android APK:** https://github.com/mengnattawitmarin/dot-app/releases/latest/download/DoT.apk
+
 ![screens](docs/screens.png)
 
 ## ฟีเจอร์
@@ -11,6 +14,10 @@
 - **ทีวีสด** — ช่อง 5, NBT, ท็อปนิวส์, Cool Channel, DLTV, NASA TV ฯลฯ (HLS) + ช่องภาพในเครื่อง
 - **ความบันเทิง** — ภาพยนตร์ลิขสิทธิ์เปิด (Blender) + คลิป "คิดสั้น" แนวตั้ง
 - ค้นหารวม, รายการโปรด/เล่นล่าสุด, ตั้งเวลาปิดเสียง, โหมดในเครื่อง, ปุ่ม Back ของ Android
+- ควบคุมเพลงจากหน้าล็อก / แถบแจ้งเตือน / Control Center (Media Session)
+- ส่งวิดีโอขึ้นทีวีด้วย AirPlay (iPhone) หรือ Cast (Chrome)
+- ย้ายรายการโปรดข้ามเครื่องด้วยโค้ด `DOT1-…` ไม่ต้องสมัครสมาชิก
+- อัปเดตรายชื่อสถานีได้โดยไม่ต้องออกเวอร์ชันใหม่ (`public/catalog.json`) และซ่อนสตรีมที่ล่มอัตโนมัติทุกวัน
 
 ## เริ่มพัฒนา
 
@@ -77,11 +84,41 @@ scripts/patch-native.mjs
 (สถานีเหล่านี้ไม่เปิดสตรีมให้แอปอื่นดึง และหนังเชิงพาณิชย์ต้องมีสิทธิ์ + DRM) ภาพโปสเตอร์ในแอปจึงเป็นงานกราฟิกที่สร้างขึ้นเอง
 ถ้าได้สิทธิ์แล้ว เพิ่มรายการใน `src/lib/catalog.ts` ได้ทันที
 
+## ระบบอัตโนมัติ (GitHub Actions)
+
+| Workflow | ทำอะไร |
+|---|---|
+| **Deploy web** | push ขึ้น `main` → build แล้ว deploy เว็บไป branch `gh-pages` |
+| **Android APK** | push ขึ้น `main` → build APK แล้วออก Release ใหม่ (ลิงก์ดาวน์โหลดด้านบนชี้ไปตัวล่าสุดเสมอ) |
+| **iOS build check** | คอมไพล์แอป iOS บน simulator เพื่อตรวจว่าโค้ดไม่พัง |
+| **Stream health** | ทุกวัน 04:17 ตรวจทุกสตรีม แล้วเขียน `stream-status.json` — แอปที่ติดตั้งแล้วจะซ่อนช่องที่ล่มเอง |
+
+### เพิ่ม/แก้สถานีโดยไม่ต้องออกเวอร์ชันใหม่
+
+แก้ `public/catalog.json` (รูปแบบเดียวกับ `src/lib/catalog.ts`) แล้ว push — แอปทุกเครื่องจะโหลดรายการใหม่ตอนเปิดครั้งถัดไป
+
+### ลงชื่อแอปสำหรับ Play Store
+
+สร้าง keystore ครั้งเดียว:
+
+```bash
+keytool -genkey -v -keystore dot-release.jks -alias dot -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 dot-release.jks   # คัดลอกผลลัพธ์
+```
+
+แล้วเพิ่ม secrets ใน repo (Settings → Secrets and variables → Actions):
+`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`
+จากนั้น Release จะมี `DoT.apk` ที่ลงชื่อแล้ว + `DoT.aab` สำหรับอัปโหลด Play Console
+(**เก็บไฟล์ .jks ไว้ให้ดี** — ถ้าหายจะอัปเดตแอปบน Play Store ไม่ได้อีก)
+
 ## แผนต่อไป
 
-- [ ] ควบคุมเสียงจากหน้าล็อก / Control Center (Media Session + `@capgo/capacitor-media-session`)
-- [ ] เก็บค่าด้วย `@capacitor/preferences` แทน localStorage
-- [ ] โหลดรายชื่อสถานี/ช่องจาก API แทน hard-code + ตรวจสตรีมที่ล่มอัตโนมัติ
-- [ ] Chromecast / AirPlay สำหรับทีวี
-- [ ] บัญชีผู้ใช้ + ซิงก์รายการโปรดข้ามเครื่อง
-- [ ] Release build ที่ลงชื่อแล้วสำหรับ Play Store / App Store
+- [x] ควบคุมเสียงจากหน้าล็อก (Media Session — สถานีสด)
+- [x] เก็บค่าด้วย `@capacitor/preferences`
+- [x] รายชื่อสถานีจากออนไลน์ + ตรวจสตรีมล่มอัตโนมัติ
+- [x] AirPlay / Cast
+- [x] ย้ายรายการโปรดข้ามเครื่อง (โค้ด)
+- [x] Release build ที่ลงชื่อได้ (เมื่อใส่ keystore)
+- [ ] บัญชีผู้ใช้จริง + ซิงก์อัตโนมัติ — ต้องเลือก backend (เช่น Supabase / Firebase)
+- [ ] ปุ่มควบคุมบนหน้าล็อกสำหรับสตูดิโอในเครื่อง (ต้องใช้ native audio plugin)
+- [ ] TestFlight / App Store — ต้องมี Apple Developer account

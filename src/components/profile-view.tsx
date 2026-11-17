@@ -1,10 +1,10 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { channels, getChannel, getStation, getTitle, stations, titles } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
-import { ChevronRight, MoonIcon, UserIcon, WifiOffIcon } from "@/components/icons";
+import { ChevronRight, MoonIcon, ShareIcon, UserIcon, WifiOffIcon } from "@/components/icons";
 import { Logo } from "@/components/ui";
 
 export function ProfileView() {
@@ -111,6 +111,8 @@ export function ProfileView() {
         </div>
       </section>
 
+      <SyncCard />
+
       <div className="mt-10 flex flex-col items-center gap-1">
         <Logo className="text-3xl" />
         <p className="text-[10px] tracking-[0.3em] text-gold-deep">LIVE YOUR MOMENT</p>
@@ -151,5 +153,81 @@ function Row({ label, meta, onClick }: { label: string; meta: string; onClick: (
       <span className="text-xs text-faint">{meta}</span>
       <ChevronRight size={16} className="text-faint" />
     </button>
+  );
+}
+
+const PREFIX = "DOT1-";
+
+export function encodeSync(ids: string[]) {
+  const bytes = new TextEncoder().encode(JSON.stringify(ids));
+  let bin = "";
+  bytes.forEach((b) => (bin += String.fromCharCode(b)));
+  return PREFIX + btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+export function decodeSync(code: string): string[] | null {
+  const raw = code.trim();
+  if (!raw.startsWith(PREFIX)) return null;
+  try {
+    const b64 = raw.slice(PREFIX.length).replace(/-/g, "+").replace(/_/g, "/");
+    const bin = atob(b64 + "===".slice((b64.length + 3) % 4));
+    const ids = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+    return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string").slice(0, 200) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Move favourites between devices with a short code — no account needed. */
+function SyncCard() {
+  const favorites = useApp((s) => s.favorites);
+  const [input, setInput] = useState("");
+
+  async function share() {
+    const code = encodeSync(favorites);
+    try {
+      if (navigator.share) await navigator.share({ title: "รายการโปรด Do.T", text: code });
+      else {
+        await navigator.clipboard.writeText(code);
+        useApp.getState().toast("คัดลอกโค้ดแล้ว");
+      }
+    } catch {
+      /* share sheet dismissed */
+    }
+  }
+
+  function apply() {
+    const ids = decodeSync(input);
+    if (!ids) return useApp.getState().toast("โค้ดไม่ถูกต้อง");
+    useApp.getState().importFavorites(ids);
+    setInput("");
+    useApp.getState().toast(`เพิ่ม ${ids.length} รายการโปรดแล้ว`);
+  }
+
+  return (
+    <section className="mt-7">
+      <h2 className="mb-2 text-xs text-faint">ย้ายรายการโปรดไปเครื่องอื่น</h2>
+      <div className="rounded-2xl bg-elevated p-4">
+        <button
+          type="button"
+          onClick={() => void share()}
+          disabled={favorites.length === 0}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-subtle text-sm text-gold-light ring-gold disabled:opacity-40"
+        >
+          <ShareIcon size={18} /> ส่งโค้ดรายการโปรด ({favorites.length})
+        </button>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="วางโค้ด DOT1-…"
+            className="h-11 min-w-0 flex-1 rounded-xl bg-subtle px-3 text-sm text-fg outline-none placeholder:text-faint focus:ring-2 focus:ring-gold"
+          />
+          <button type="button" onClick={apply} className="h-11 rounded-xl bg-gold-grad px-4 text-sm font-medium text-accent-fg">
+            นำเข้า
+          </button>
+        </div>
+      </div>
+    </section>
   );
 }

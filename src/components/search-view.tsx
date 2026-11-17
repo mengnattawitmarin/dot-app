@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { channels, stations, titles } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
+import { useApp } from "@/lib/store";
 import { SearchIcon } from "@/components/icons";
 import { StationList } from "@/components/radio-view";
 import { ChannelMark, Chip, Poster } from "@/components/ui";
@@ -9,6 +10,7 @@ const SUGGEST = ["COOL", "ลูกทุ่ง", "ข่าว", "แจ๊ส"
 
 export function SearchView() {
   const [q, setQ] = useState("");
+  const version = useApp((s) => s.catalogVersion);
   const term = q.trim().toLowerCase();
   const result = useMemo(() => {
     if (!term) return null;
@@ -18,7 +20,7 @@ export function SearchView() {
       channels: channels.filter((c) => has(`${c.name} ${c.blurb}`)),
       titles: titles.filter((t) => has(`${t.name} ${t.tagline}`)),
     };
-  }, [term]);
+  }, [term, version]);
   const empty = result && result.stations.length + result.channels.length + result.titles.length === 0;
 
   return (

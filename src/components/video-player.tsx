@@ -2,10 +2,14 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { SceneId } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
 import { SceneCanvas } from "@/components/scene-canvas";
-import { ChevronLeft, PlayIcon } from "@/components/icons";
+import { CastIcon, ChevronLeft, PlayIcon } from "@/components/icons";
 import { LiveBadge } from "@/components/ui";
 
 type HlsLike = { destroy: () => void };
+type CastableVideo = HTMLVideoElement & {
+  webkitShowPlaybackTargetPicker?: () => void;
+  remote?: { prompt: () => Promise<void>; watchAvailability?: (cb: (available: boolean) => void) => Promise<number> };
+};
 
 /**
  * Full-screen player shared by live TV and films.
@@ -39,6 +43,28 @@ export function VideoPlayer({
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const sceneMode = !src;
+  const [canCast, setCanCast] = useState(false);
+
+  useEffect(() => {
+    const v = videoRef.current as CastableVideo | null;
+    if (!v) return;
+    if (v.webkitShowPlaybackTargetPicker) {
+      setCanCast(true); // AirPlay (iOS)
+      return;
+    }
+    if (v.remote?.watchAvailability) {
+      v.remote
+        .watchAvailability((available) => setCanCast(available))
+        .catch(() => setCanCast(false)); // Remote Playback (Chromecast in Chrome)
+    }
+  }, []);
+
+  function cast() {
+    const v = videoRef.current as CastableVideo | null;
+    if (!v) return;
+    if (v.webkitShowPlaybackTargetPicker) v.webkitShowPlaybackTargetPicker();
+    else void v.remote?.prompt().catch(() => undefined);
+  }
 
   function destroyHls() {
     hlsActive.current = false;
@@ -115,6 +141,7 @@ export function VideoPlayer({
           ref={videoRef}
           className={cn("absolute inset-0 h-full w-full object-contain", (sceneMode || blocked) && "hidden")}
           playsInline
+          x-webkit-airplay="allow"
           controls={!live && !sceneMode}
           onWaiting={() => setLoading(true)}
           onPlaying={() => {
@@ -144,6 +171,16 @@ export function VideoPlayer({
               </p>
               <p className="truncate text-xs text-muted">{subtitle}</p>
             </div>
+            {canCast && !sceneMode ? (
+              <button
+                type="button"
+                onClick={cast}
+                aria-label="ส่งไปทีวี (AirPlay / Cast)"
+                className="ml-auto grid size-10 shrink-0 place-items-center rounded-full bg-black/50 text-gold ring-gold"
+              >
+                <CastIcon size={20} />
+              </button>
+            ) : null}
           </div>
         </div>
         {needsTap && !sceneMode ? (

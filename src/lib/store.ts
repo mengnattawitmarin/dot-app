@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { loadValue, saveValue } from "@/lib/storage";
 
 export type TabId = "home" | "radio" | "tv" | "movies" | "search" | "profile";
 export type Output = "radio" | "tv" | "video" | "idle";
@@ -50,25 +51,27 @@ export type AppState = {
   sleepEndsAt: number | null;
   setSleepMinutes: (minutes: number | null) => void;
   hydrated: boolean;
-  hydrate: () => void;
+  hydrate: () => Promise<void>;
+  /** replace favourites wholesale (sync code import) */
+  importFavorites: (ids: string[]) => void;
+  /** bumped when the remote catalogue changes the station/channel lists */
+  catalogVersion: number;
+  bumpCatalog: () => void;
 };
 
 let toastTimer = 0;
 
-function readPrefs(): Partial<Prefs> {
-  if (typeof window === "undefined") return {};
+async function readPrefs(): Promise<Partial<Prefs>> {
+  const raw = await loadValue(KEY);
+  if (!raw) return {};
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Partial<Prefs>;
-    return parsed ?? {};
+    return (JSON.parse(raw) as Partial<Prefs>) ?? {};
   } catch {
     return {};
   }
 }
 
 function writePrefs(state: AppState) {
-  if (typeof window === "undefined") return;
   const prefs: Prefs = {
     favorites: state.favorites,
     liked: state.liked,
@@ -76,7 +79,7 @@ function writePrefs(state: AppState) {
     volume: state.volume,
     forcedOffline: state.forcedOffline,
   };
-  localStorage.setItem(KEY, JSON.stringify(prefs));
+  void saveValue(KEY, JSON.stringify(prefs));
 }
 
 export const useApp = create<AppState>((set, get) => ({
@@ -140,9 +143,16 @@ export const useApp = create<AppState>((set, get) => ({
   setSleepMinutes: (minutes) => {
     set({ sleepEndsAt: minutes == null ? null : Date.now() + minutes * 60_000 });
   },
+  catalogVersion: 0,
+  bumpCatalog: () => set({ catalogVersion: get().catalogVersion + 1 }),
+  importFavorites: (ids) => {
+    const favorites = [...new Set([...ids, ...get().favorites])];
+    set({ favorites });
+    writePrefs(get());
+  },
   hydrated: false,
-  hydrate: () => {
-    const prefs = readPrefs();
+  hydrate: async () => {
+    const prefs = await readPrefs();
     set({
       hydrated: true,
       favorites: prefs.favorites ?? [],

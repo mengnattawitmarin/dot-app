@@ -1,0 +1,44 @@
+name: Deploy web
+
+# Publishes the web version to GitHub Pages:
+#   https://mengnattawitmarin.github.io/dot-app/
+# Installed apps also read catalog.json / stream-status.json from here.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
+          commit_message: "deploy: ${{ github.sha }}"

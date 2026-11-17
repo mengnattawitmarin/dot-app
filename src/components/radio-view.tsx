@@ -20,10 +20,12 @@ const FILTERS: Array<{ id: FilterId; label: string; test: (s: Station) => boolea
 
 export function RadioView() {
   const [filter, setFilter] = useState<FilterId>("all");
+  const version = useApp((s) => s.catalogVersion);
   const visible = useMemo(() => {
     const f = FILTERS.find((x) => x.id === filter) ?? FILTERS[0]!;
     return stations.filter(f.test);
-  }, [filter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter, version]);
 
   return (
     <div className="no-scrollbar h-full overflow-y-auto px-4 pb-6">
