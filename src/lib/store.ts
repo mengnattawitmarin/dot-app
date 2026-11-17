@@ -57,6 +57,11 @@ export type AppState = {
   /** bumped when the remote catalogue changes the station/channel lists */
   catalogVersion: number;
   bumpCatalog: () => void;
+  /** notifications inbox */
+  noticesOpen: boolean;
+  setNoticesOpen: (open: boolean) => void;
+  noticesVersion: number;
+  bumpNotices: () => void;
 };
 
 let toastTimer = 0;
@@ -143,6 +148,10 @@ export const useApp = create<AppState>((set, get) => ({
   setSleepMinutes: (minutes) => {
     set({ sleepEndsAt: minutes == null ? null : Date.now() + minutes * 60_000 });
   },
+  noticesOpen: false,
+  setNoticesOpen: (noticesOpen) => set({ noticesOpen }),
+  noticesVersion: 0,
+  bumpNotices: () => set({ noticesVersion: get().noticesVersion + 1 }),
   catalogVersion: 0,
   bumpCatalog: () => set({ catalogVersion: get().catalogVersion + 1 }),
   importFavorites: (ids) => {

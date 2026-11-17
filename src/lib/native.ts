@@ -24,6 +24,7 @@ export async function setupNative() {
 
   void CapApp.addListener("backButton", () => {
     const s = useApp.getState();
+    if (s.noticesOpen) return s.setNoticesOpen(false);
     if (s.activeTitle) return closeTitle();
     if (s.activeChannel) return closeChannel();
     if (s.nowOpen) return s.setNowOpen(false);

@@ -3,6 +3,7 @@ dist/
 .DS_Store
 *.log
 .env*
+!.env.example
 # native build outputs (platform folders themselves are committed once generated)
 android/app/build/
 android/.gradle/

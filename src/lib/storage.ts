@@ -24,3 +24,12 @@ export async function saveValue(key: string, value: string): Promise<void> {
     /* storage full or unavailable — prefs stay in memory */
   }
 }
+
+export async function removeValue(key: string): Promise<void> {
+  try {
+    if (native) await Preferences.remove({ key });
+    else localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}

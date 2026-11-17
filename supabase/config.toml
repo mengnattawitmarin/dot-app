@@ -1,0 +1,6 @@
+# Minimal Supabase CLI config — only used by `supabase link / db push / functions deploy`.
+project_id = "dot-app"
+
+[functions.notify]
+# Called by a Database Webhook, authenticated with the x-webhook-secret header instead of a user JWT.
+verify_jwt = false

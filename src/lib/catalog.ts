@@ -74,8 +74,11 @@ export type Clip = {
   likes: number;
   comments: number;
   shares: number;
-  /** set for clips the user recorded / uploaded on this device */
+  /** set for clips the signed-in user owns (device-only or online) */
   mine?: boolean;
+  /** posted online via Supabase */
+  cloud?: boolean;
+  ownerId?: string;
 };
 
 export const GENRE_LABEL: Record<Genre, string> = {

@@ -242,3 +242,18 @@ export const CloseIcon = (p: IconProps) => (
     <path d="M6 6l12 12M18 6 6 18" />
   </svg>
 );
+
+export const MoreIcon = (p: IconProps) => (
+  <svg {...base(p)} fill="currentColor" stroke="none">
+    <circle cx="5.5" cy="12" r="1.8" />
+    <circle cx="12" cy="12" r="1.8" />
+    <circle cx="18.5" cy="12" r="1.8" />
+  </svg>
+);
+
+export const GlobeIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M3.5 12h17M12 3.5c2.5 2.6 3.6 5.4 3.6 8.5s-1.1 5.9-3.6 8.5c-2.5-2.6-3.6-5.4-3.6-8.5S9.5 6.1 12 3.5z" />
+  </svg>
+);

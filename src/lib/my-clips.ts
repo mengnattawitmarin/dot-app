@@ -43,7 +43,7 @@ function toClip(row: Row): Clip {
     src,
     author: "คุณ",
     caption: row.caption || "คลิปของฉัน",
-    credit: "เสียงต้นฉบับ",
+    credit: "คุณ",
     likes: 0,
     comments: 0,
     shares: 0,

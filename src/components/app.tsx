@@ -7,6 +7,11 @@ import { selectOffline, useApp, type TabId } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { loadRemote } from "@/lib/remote";
 import { loadThaiStations } from "@/lib/radio-browser";
+import { initAuth } from "@/lib/supabase";
+import { pullFavorites, watchFavorites } from "@/lib/cloud";
+import { resumePush } from "@/lib/push";
+import { SignInSheet } from "@/components/account";
+import { NoticesSheet, useUnreadCount } from "@/components/notices-sheet";
 import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
 import { ClipperView } from "@/components/clipper-view";
 import { HomeView } from "@/components/home-view";
@@ -41,12 +46,19 @@ export function App() {
   const activeTitle = useApp((s) => s.activeTitle);
   const activeChannel = useApp((s) => s.activeChannel);
   const station = now ? getStation(now.id) : undefined;
+  const unread = useUnreadCount();
   const title = activeTitle ? getTitle(activeTitle) : undefined;
   const channel = activeChannel ? getChannel(activeChannel) : undefined;
 
   useEffect(() => {
     void useApp.getState().hydrate().then(applyVolume);
     void loadRemote().then(loadThaiStations);
+    watchFavorites();
+    void initAuth(() => {
+      void pullFavorites();
+      void resumePush();
+      useApp.getState().bumpNotices();
+    });
     const sync = () => useApp.getState().setOnline(navigator.onLine);
     const wentOffline = () => {
       useApp.getState().setOnline(false);
@@ -110,11 +122,15 @@ export function App() {
             <button
               type="button"
               aria-label="การแจ้งเตือน"
-              onClick={() => useApp.getState().toast("ยังไม่มีการแจ้งเตือนใหม่")}
+              onClick={() => useApp.getState().setNoticesOpen(true)}
               className="relative grid size-10 place-items-center text-fg"
             >
               <BellIcon size={22} />
-              <span className="absolute right-2.5 top-2.5 size-1.5 rounded-full bg-live" />
+              {unread > 0 ? (
+                <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-live px-1 text-[9px] font-bold text-white">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              ) : null}
             </button>
             <button type="button" aria-label="ค้นหา" onClick={() => useApp.getState().setTab("search")} className="grid size-10 place-items-center text-fg">
               <SearchIcon size={22} />
@@ -177,6 +193,8 @@ export function App() {
       </nav>
 
       <NowScreen />
+      <NoticesSheet />
+      <SignInSheet />
 
       {title ? (
         <VideoPlayer

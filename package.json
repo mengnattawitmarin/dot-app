@@ -1,7 +1,7 @@
 {
   "name": "dot-app",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "description": "Do.T — Radio · TV · Entertainment for Android & iPhone (Capacitor)",
   "scripts": {
@@ -23,8 +23,10 @@
     "@capacitor/core": "^7.2.0",
     "@capacitor/ios": "^7.2.0",
     "@capacitor/preferences": "^7.0.0",
+    "@capacitor/push-notifications": "^7.0.0",
     "@capacitor/splash-screen": "^7.0.0",
     "@capacitor/status-bar": "^7.0.0",
+    "@supabase/supabase-js": "^2.49.4",
     "clsx": "^2.1.1",
     "hls.js": "^1.5.20",
     "react": "^19.1.0",

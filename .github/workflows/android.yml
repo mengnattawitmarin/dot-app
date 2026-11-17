@@ -25,6 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HAS_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+      HAS_FIREBASE: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -42,11 +43,18 @@ jobs:
 
       - name: Build web app
         run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          VITE_PUSH_ENABLED: ${{ secrets.GOOGLE_SERVICES_JSON != '' && '1' || '' }}
 
       - name: Add Android platform (first run)
         run: |
           if [ ! -d android ]; then npx cap add android; fi
           node scripts/patch-native.mjs
+          if [ "$HAS_FIREBASE" = "true" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
+          fi
           npx capacitor-assets generate --android --iconBackgroundColor '#0b0a08' --splashBackgroundColor '#0b0a08' || true
           npx cap sync android
 

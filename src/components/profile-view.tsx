@@ -4,7 +4,8 @@ import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
-import { ChevronRight, MoonIcon, ShareIcon, UserIcon, WifiOffIcon } from "@/components/icons";
+import { ChevronRight, MoonIcon, ShareIcon, WifiOffIcon } from "@/components/icons";
+import { AccountCard, PushToggle } from "@/components/account";
 import { Logo } from "@/components/ui";
 
 export function ProfileView() {
@@ -42,15 +43,7 @@ export function ProfileView() {
 
   return (
     <div className="no-scrollbar h-full overflow-y-auto px-4 pb-8">
-      <div className="card-sheen flex items-center gap-4 rounded-2xl p-4">
-        <span className="grid size-14 place-items-center rounded-full bg-subtle text-gold ring-gold">
-          <UserIcon size={28} />
-        </span>
-        <div>
-          <p className="text-lg font-semibold">ผู้ฟัง Do.T</p>
-          <p className="text-xs text-muted">รายการโปรดเก็บไว้ในเครื่องนี้ ไม่ต้องสมัครสมาชิก</p>
-        </div>
-      </div>
+      <AccountCard />
 
       <Shelf title="รายการโปรด" empty="กดหัวใจที่สถานีหรือช่อง แล้วจะมาอยู่ตรงนี้">
         {saved.map((x) => (
@@ -67,6 +60,7 @@ export function ProfileView() {
       <section className="mt-7">
         <h2 className="mb-2 text-xs text-faint">ตั้งค่า</h2>
         <div className="divide-y divide-line rounded-2xl bg-elevated">
+          <PushToggle />
           <button
             type="button"
             onClick={() => {

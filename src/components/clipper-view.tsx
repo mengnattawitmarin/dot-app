@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { clips, type Clip } from "@/lib/catalog";
 import { addMyClip, listMyClips, removeMyClip } from "@/lib/my-clips";
+import { addComment, deleteCloudClip, fetchCloudClips, fetchComments, reportClip, setCloudLike, uploadCloudClip, type CloudComment } from "@/lib/cloud";
+import { cloudEnabled } from "@/lib/config";
+import { useAuth } from "@/lib/supabase";
+import { askSignIn } from "@/components/account";
 import { pauseRadio } from "@/lib/player";
 import { REMOTE_BASE } from "@/lib/remote";
 import { loadValue, saveValue } from "@/lib/storage";
@@ -10,6 +14,8 @@ import { hashPalette } from "@/components/art";
 import {
   BookmarkIcon,
   CloseIcon,
+  GlobeIcon,
+  MoreIcon,
   CommentIcon,
   HeartIcon,
   MusicIcon,
@@ -26,6 +32,7 @@ const fmt = (n: number) => compact.format(n);
 
 const FOLLOW_KEY = "dot-following-v1";
 const COMMENTS_KEY = "dot-comments-v1";
+const HIDDEN_KEY = "dot-hidden-clips-v1";
 
 type MyComment = { text: string; at: number };
 
@@ -48,8 +55,14 @@ function seededComments(clip: Clip) {
 
 export function ClipperView() {
   const offline = useApp(selectOffline);
+  const session = useAuth((s) => s.session);
   const [mine, setMine] = useState<Clip[]>([]);
-  const feed = useMemo(() => [...mine, ...(offline ? [] : clips)], [mine, offline]);
+  const [cloud, setCloud] = useState<Clip[]>([]);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const feed = useMemo(
+    () => [...mine, ...(offline ? [] : [...cloud, ...clips])].filter((c) => !hidden.includes(c.id)),
+    [mine, cloud, offline, hidden],
+  );
   const [active, setActive] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
   const [following, setFollowing] = useState<string[]>([]);
@@ -61,7 +74,18 @@ export function ClipperView() {
   useEffect(() => {
     void listMyClips().then(setMine);
     void loadValue(FOLLOW_KEY).then((raw) => raw && setFollowing(JSON.parse(raw) as string[]));
+    void loadValue(HIDDEN_KEY).then((raw) => raw && setHidden(JSON.parse(raw) as string[]));
   }, []);
+
+  useEffect(() => {
+    if (!offline) void fetchCloudClips().then(setCloud);
+  }, [session, offline]);
+
+  function hide(clip: Clip) {
+    const next = [...hidden, clip.id];
+    setHidden(next);
+    void saveValue(HIDDEN_KEY, JSON.stringify(next.slice(-500)));
+  }
 
   useEffect(() => {
     if (soundOn) pauseRadio();
@@ -89,9 +113,25 @@ export function ClipperView() {
   }
 
   async function remove(clip: Clip) {
-    await removeMyClip(clip.id);
-    setMine((list) => list.filter((c) => c.id !== clip.id));
+    if (clip.cloud) {
+      await deleteCloudClip(clip);
+      setCloud((list) => list.filter((c) => c.id !== clip.id));
+    } else {
+      await removeMyClip(clip.id);
+      setMine((list) => list.filter((c) => c.id !== clip.id));
+    }
     useApp.getState().toast("ลบคลิปแล้ว");
+  }
+
+  async function report(clip: Clip) {
+    try {
+      await reportClip(clip.id, "inappropriate");
+      hide(clip);
+      useApp.getState().toast("ส่งรายงานแล้ว ขอบคุณที่ช่วยดูแลชุมชน");
+    } catch (e) {
+      if (!session) askSignIn("เข้าสู่ระบบเพื่อรายงานคลิป");
+      else useApp.getState().toast(e instanceof Error ? e.message : "รายงานไม่สำเร็จ");
+    }
   }
 
   return (
@@ -110,6 +150,8 @@ export function ClipperView() {
             onSound={() => setSoundOn((v) => !v)}
             onComments={() => setCommentsFor(clip)}
             onDelete={clip.mine ? () => void remove(clip) : undefined}
+            onHide={() => hide(clip)}
+            onReport={clip.cloud && !clip.mine ? () => void report(clip) : undefined}
           />
         ))}
         {feed.length === 0 ? (
@@ -174,11 +216,12 @@ export function ClipperView() {
           onClose={() => setDraft(null)}
           onPosted={(clip) => {
             setDraft(null);
-            setMine((list) => [clip, ...list]);
+            if (clip.cloud) setCloud((list) => [clip, ...list]);
+            else setMine((list) => [clip, ...list]);
             setActive(0);
             // wait for the new item to render, then jump to it (scroll anchoring would keep the old clip in view)
             window.requestAnimationFrame(() => window.requestAnimationFrame(() => scroller.current?.scrollTo({ top: 0 })));
-            useApp.getState().toast("โพสต์คลิปแล้ว (เก็บในเครื่องนี้)");
+            useApp.getState().toast(clip.cloud ? "โพสต์สาธารณะแล้ว 🎉" : "บันทึกคลิปในเครื่องแล้ว");
           }}
         />
       ) : null}
@@ -197,6 +240,8 @@ function ClipItem({
   onSound,
   onComments,
   onDelete,
+  onHide,
+  onReport,
 }: {
   clip: Clip;
   index: number;
@@ -208,7 +253,10 @@ function ClipItem({
   onSound: () => void;
   onComments: () => void;
   onDelete?: () => void;
+  onHide: () => void;
+  onReport?: () => void;
 }) {
+  const [menu, setMenu] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
   const [paused, setPaused] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -249,11 +297,17 @@ function ClipItem({
       const id = now;
       setHearts((h) => [...h, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
       window.setTimeout(() => setHearts((h) => h.filter((x) => x.id !== id)), 900);
-      if (!liked) useApp.getState().toggleLike(clip.id);
+      if (!liked) toggleLike();
       return;
     }
     lastTap.current = now;
     tapTimer.current = window.setTimeout(() => setPaused((p) => !p), 280);
+  }
+
+  function toggleLike() {
+    if (clip.cloud && !useAuth.getState().session) return askSignIn("เข้าสู่ระบบเพื่อถูกใจคลิป");
+    useApp.getState().toggleLike(clip.id);
+    if (clip.cloud) void setCloudLike(clip.id, !liked);
   }
 
   async function share() {
@@ -340,7 +394,7 @@ function ClipItem({
             </button>
           ) : null}
         </div>
-        <RailButton label={fmt(clip.likes + (liked ? 1 : 0))} onClick={() => useApp.getState().toggleLike(clip.id)} aria={liked ? "เลิกถูกใจ" : "ถูกใจ"}>
+        <RailButton label={fmt(clip.likes + (liked ? 1 : 0))} onClick={toggleLike} aria={liked ? "เลิกถูกใจ" : "ถูกใจ"}>
           <HeartIcon size={30} filled={liked} className={liked ? "text-live" : "text-fg"} />
         </RailButton>
         <RailButton label={fmt(clip.comments)} onClick={onComments} aria="ความคิดเห็น">
@@ -356,8 +410,44 @@ function ClipItem({
           <RailButton label="ลบ" onClick={onDelete} aria="ลบคลิป">
             <TrashIcon size={26} />
           </RailButton>
-        ) : null}
+        ) : (
+          <RailButton label="" onClick={() => setMenu(true)} aria="ตัวเลือกเพิ่มเติม">
+            <MoreIcon size={26} />
+          </RailButton>
+        )}
       </div>
+
+      {menu ? (
+        <div className="absolute inset-0 z-20 flex flex-col justify-end bg-black/50" onClick={() => setMenu(false)}>
+          <div className="rise rounded-t-3xl bg-elevated p-2 pb-4" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => {
+                setMenu(false);
+                onHide();
+              }}
+              className="flex h-12 w-full items-center px-4 text-left text-sm"
+            >
+              ไม่สนใจคลิปนี้
+            </button>
+            {onReport ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenu(false);
+                  onReport();
+                }}
+                className="flex h-12 w-full items-center px-4 text-left text-sm text-live"
+              >
+                รายงานคลิปไม่เหมาะสม
+              </button>
+            ) : null}
+            <button type="button" onClick={() => setMenu(false)} className="flex h-12 w-full items-center px-4 text-left text-sm text-muted">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* caption */}
       <div className="absolute bottom-4 left-0 right-16 px-4">
@@ -401,10 +491,15 @@ function RailButton({ children, label, onClick, aria }: { children: ReactNode; l
 
 function CommentsSheet({ clip, onClose }: { clip: Clip; onClose: () => void }) {
   const [mine, setMine] = useState<MyComment[]>([]);
+  const [remote, setRemote] = useState<CloudComment[]>([]);
   const [text, setText] = useState("");
-  const seeded = useMemo(() => (clip.mine ? [] : seededComments(clip)), [clip]);
+  const seeded = useMemo(() => (clip.mine || clip.cloud ? [] : seededComments(clip)), [clip]);
 
   useEffect(() => {
+    if (clip.cloud) {
+      void fetchComments(clip.id).then(setRemote);
+      return;
+    }
     void loadValue(COMMENTS_KEY).then((raw) => {
       const all = raw ? (JSON.parse(raw) as Record<string, MyComment[]>) : {};
       setMine(all[clip.id] ?? []);
@@ -414,6 +509,17 @@ function CommentsSheet({ clip, onClose }: { clip: Clip; onClose: () => void }) {
   async function send() {
     const t = text.trim();
     if (!t) return;
+    if (clip.cloud) {
+      if (!useAuth.getState().session) return askSignIn("เข้าสู่ระบบเพื่อคอมเมนต์");
+      try {
+        await addComment(clip.id, t);
+        setText("");
+        setRemote(await fetchComments(clip.id));
+      } catch (e) {
+        useApp.getState().toast(e instanceof Error ? e.message : "ส่งไม่สำเร็จ");
+      }
+      return;
+    }
     const next = [{ text: t, at: Date.now() }, ...mine];
     setMine(next);
     setText("");
@@ -427,19 +533,22 @@ function CommentsSheet({ clip, onClose }: { clip: Clip; onClose: () => void }) {
     <div className="absolute inset-0 z-30 flex flex-col justify-end bg-black/40" onClick={onClose}>
       <div className="rise flex max-h-[65%] flex-col rounded-t-3xl bg-elevated" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between border-b border-line px-4 py-3">
-          <p className="text-sm font-semibold">ความคิดเห็น {fmt(clip.comments + mine.length)}</p>
+          <p className="text-sm font-semibold">ความคิดเห็น {fmt(clip.cloud ? remote.length : clip.comments + mine.length)}</p>
           <button type="button" onClick={onClose} aria-label="ปิด" className="grid size-8 place-items-center text-muted">
             <CloseIcon size={18} />
           </button>
         </div>
         <ul className="no-scrollbar flex-1 overflow-y-auto px-4 py-2">
+          {remote.map((c) => (
+            <Comment key={c.id} name={c.profiles?.handle ?? "ผู้ใช้"} text={c.body} />
+          ))}
           {mine.map((c) => (
             <Comment key={c.at} name="คุณ" text={c.text} />
           ))}
           {seeded.map(([name, t]) => (
             <Comment key={name} name={name} text={t} />
           ))}
-          {mine.length + seeded.length === 0 ? <p className="py-6 text-center text-sm text-muted">ยังไม่มีความคิดเห็น</p> : null}
+          {remote.length + mine.length + seeded.length === 0 ? <p className="py-6 text-center text-sm text-muted">ยังไม่มีความคิดเห็น</p> : null}
         </ul>
         <div className="safe-bottom flex items-center gap-2 border-t border-line px-3 py-2">
           <input
@@ -476,6 +585,8 @@ function Comment({ name, text }: { name: string; text: string }) {
 function UploadSheet({ file, onClose, onPosted }: { file: File; onClose: () => void; onPosted: (clip: Clip) => void }) {
   const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState(false);
+  const session = useAuth((s) => s.session);
+  const [publicPost, setPublicPost] = useState(cloudEnabled);
   const [preview, setPreview] = useState("");
   useEffect(() => {
     const url = URL.createObjectURL(file);
@@ -484,9 +595,10 @@ function UploadSheet({ file, onClose, onPosted }: { file: File; onClose: () => v
   }, [file]);
 
   async function post() {
+    if (publicPost && !session) return askSignIn("เข้าสู่ระบบเพื่อโพสต์คลิปให้ทุกคนเห็น");
     setBusy(true);
     try {
-      onPosted(await addMyClip(file, caption));
+      onPosted(publicPost ? await uploadCloudClip(file, caption) : await addMyClip(file, caption));
     } catch (e) {
       useApp.getState().toast(e instanceof Error ? e.message : "บันทึกคลิปไม่ได้");
       setBusy(false);
@@ -506,7 +618,7 @@ function UploadSheet({ file, onClose, onPosted }: { file: File; onClose: () => v
           onClick={() => void post()}
           className="h-9 rounded-full bg-gold-grad px-4 text-sm font-semibold text-accent-fg disabled:opacity-50"
         >
-          {busy ? "กำลังบันทึก…" : "โพสต์"}
+          {busy ? (publicPost ? "กำลังอัปโหลด…" : "กำลังบันทึก…") : "โพสต์"}
         </button>
       </div>
       <div className="relative mx-auto aspect-[9/16] h-[55%] overflow-hidden rounded-2xl bg-black">
@@ -521,7 +633,29 @@ function UploadSheet({ file, onClose, onPosted }: { file: File; onClose: () => v
           placeholder="เขียนคำบรรยาย… #แฮชแท็ก"
           className="w-full resize-none rounded-xl bg-subtle p-3 text-sm text-fg outline-none placeholder:text-faint focus:ring-2 focus:ring-gold"
         />
-        <p className="mt-2 text-xs text-faint">คลิปเก็บไว้ในเครื่องนี้เท่านั้น ยังไม่ได้อัปโหลดขึ้นออนไลน์</p>
+        {cloudEnabled ? (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setPublicPost(true)}
+              className={cn("flex h-11 items-center justify-center gap-2 rounded-xl text-sm", publicPost ? "bg-gold-grad text-accent-fg" : "bg-subtle text-muted ring-gold")}
+            >
+              <GlobeIcon size={16} /> สาธารณะ
+            </button>
+            <button
+              type="button"
+              onClick={() => setPublicPost(false)}
+              className={cn("h-11 rounded-xl text-sm", !publicPost ? "bg-gold-grad text-accent-fg" : "bg-subtle text-muted ring-gold")}
+            >
+              เก็บในเครื่อง
+            </button>
+          </div>
+        ) : null}
+        <p className="mt-2 text-xs text-faint">
+          {publicPost
+            ? "ทุกคนที่ใช้ Do.T จะเห็นคลิปนี้ (ไม่เกิน 50 MB) — โปรดโพสต์เฉพาะคลิปที่คุณเป็นเจ้าของ"
+            : "คลิปเก็บไว้ในเครื่องนี้เท่านั้น ไม่ได้อัปโหลด"}
+        </p>
       </div>
     </div>
   );
