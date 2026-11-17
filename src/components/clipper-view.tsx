@@ -22,6 +22,7 @@ import {
   MusicIcon,
   PauseIcon,
   PlusIcon,
+  ScissorsIcon,
   SendIcon,
   ShareIcon,
   TrashIcon,
@@ -174,6 +175,14 @@ export function ClipperView() {
               className="grid size-10 place-items-center rounded-full bg-black/40 text-fg"
             >
               <VolumeIcon size={20} muted={!soundOn} />
+            </button>
+            <button
+              type="button"
+              onClick={() => useApp.getState().setTab("editor")}
+              aria-label="ตัดต่อวิดีโอ"
+              className="flex h-10 items-center gap-1.5 rounded-full bg-black/40 px-3 text-sm text-fg ring-gold"
+            >
+              <ScissorsIcon size={18} /> ตัดต่อ
             </button>
             <button
               type="button"

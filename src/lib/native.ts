@@ -28,6 +28,7 @@ export async function setupNative() {
     if (s.activeTitle) return closeTitle();
     if (s.activeChannel) return closeChannel();
     if (s.nowOpen) return s.setNowOpen(false);
+    if (s.tab === "editor" && !window.confirm("ออกจากการตัดต่อ? งานที่ยังไม่ได้ส่งออกจะหายไป")) return;
     if (s.tab !== "home") return s.setTab("home");
     void CapApp.minimizeApp();
   });

@@ -272,3 +272,58 @@ export const HeadphonesIcon = (p: IconProps) => (
     <rect x="16" y="13.5" width="4.5" height="7" rx="1.6" />
   </svg>
 );
+
+export const ScissorsIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <circle cx="6" cy="6.5" r="2.6" />
+    <circle cx="6" cy="17.5" r="2.6" />
+    <path d="M8.2 8 20 18.5M8.2 16 20 5.5" />
+  </svg>
+);
+
+export const UndoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M9 7 4.5 11.5 9 16" />
+    <path d="M5 11.5h9.5a5 5 0 0 1 0 10H12" />
+  </svg>
+);
+
+export const RedoIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m15 7 4.5 4.5L15 16" />
+    <path d="M19 11.5H9.5a5 5 0 0 0 0 10H12" />
+  </svg>
+);
+
+export const TextIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M5 6.5V4.5h14v2M12 4.5v15M9 19.5h6" />
+  </svg>
+);
+
+export const SparkleIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 3.5 13.8 9 19.5 10.5 13.8 12 12 17.5 10.2 12 4.5 10.5 10.2 9z" />
+    <path d="M18.5 16.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z" />
+  </svg>
+);
+
+export const SlidersIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M4 7h10M18 7h2M4 17h2M10 17h10" />
+    <circle cx="16" cy="7" r="2" />
+    <circle cx="8" cy="17" r="2" />
+  </svg>
+);
+
+export const CropIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M6.5 3v14.5H21M3 6.5h14.5V21" />
+  </svg>
+);
+
+export const WandIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="m4 20 11-11M14 4.5v2M18.5 9.5h2M17 6l1.4-1.4M17 13l1.4 1.4M11 6 9.6 4.6" />
+  </svg>
+);
