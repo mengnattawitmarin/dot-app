@@ -1,0 +1,155 @@
+import type { ReactNode } from "react";
+import { channels, getChannel, getStation, getTitle, stations, titles } from "@/lib/catalog";
+import { openChannel, openTitle } from "@/lib/actions";
+import { playStation } from "@/lib/player";
+import { useApp } from "@/lib/store";
+import { cn } from "@/lib/cn";
+import { ChevronRight, MoonIcon, UserIcon, WifiOffIcon } from "@/components/icons";
+import { Logo } from "@/components/ui";
+
+export function ProfileView() {
+  const favorites = useApp((s) => s.favorites);
+  const recent = useApp((s) => s.recent);
+  const forced = useApp((s) => s.forcedOffline);
+  const online = useApp((s) => s.online);
+  const sleepEndsAt = useApp((s) => s.sleepEndsAt);
+
+  const saved = [
+    ...stations.filter((s) => favorites.includes(s.id)).map((s) => ({ id: s.id, label: s.name, kind: "วิทยุ" })),
+    ...channels.filter((c) => favorites.includes(c.id)).map((c) => ({ id: c.id, label: c.name, kind: "ทีวี" })),
+    ...titles.filter((t) => favorites.includes(t.id)).map((t) => ({ id: t.id, label: t.name, kind: "หนัง" })),
+  ];
+  const recentItems = recent
+    .map((id) => {
+      const s = getStation(id);
+      if (s) return { id, label: s.name, kind: "วิทยุ" };
+      const c = getChannel(id);
+      if (c) return { id, label: c.name, kind: "ทีวี" };
+      const t = getTitle(id);
+      if (t) return { id, label: t.name, kind: "หนัง" };
+      return null;
+    })
+    .filter((x): x is { id: string; label: string; kind: string } => Boolean(x));
+
+  function open(id: string) {
+    const s = getStation(id);
+    if (s) return void playStation(s);
+    if (getChannel(id)) return openChannel(id);
+    if (getTitle(id)) return openTitle(id);
+  }
+
+  return (
+    <div className="no-scrollbar h-full overflow-y-auto px-4 pb-8">
+      <div className="card-sheen flex items-center gap-4 rounded-2xl p-4">
+        <span className="grid size-14 place-items-center rounded-full bg-subtle text-gold ring-gold">
+          <UserIcon size={28} />
+        </span>
+        <div>
+          <p className="text-lg font-semibold">ผู้ฟัง Do.T</p>
+          <p className="text-xs text-muted">รายการโปรดเก็บไว้ในเครื่องนี้ ไม่ต้องสมัครสมาชิก</p>
+        </div>
+      </div>
+
+      <Shelf title="รายการโปรด" empty="กดหัวใจที่สถานีหรือช่อง แล้วจะมาอยู่ตรงนี้">
+        {saved.map((x) => (
+          <Row key={x.id} label={x.label} meta={x.kind} onClick={() => open(x.id)} />
+        ))}
+      </Shelf>
+
+      <Shelf title="เล่นล่าสุด" empty="ยังไม่มีประวัติ">
+        {recentItems.map((x) => (
+          <Row key={x.id} label={x.label} meta={x.kind} onClick={() => open(x.id)} />
+        ))}
+      </Shelf>
+
+      <section className="mt-7">
+        <h2 className="mb-2 text-xs text-faint">ตั้งค่า</h2>
+        <div className="divide-y divide-line rounded-2xl bg-elevated">
+          <button
+            type="button"
+            onClick={() => {
+              if (!online && forced) return useApp.getState().toast("ยังไม่มีอินเทอร์เน็ต");
+              useApp.getState().setForcedOffline(!forced);
+            }}
+            className="flex w-full items-center gap-3 p-4 text-left"
+          >
+            <WifiOffIcon size={20} className="text-gold" />
+            <span className="flex-1">
+              <span className="block text-sm">โหมดในเครื่อง</span>
+              <span className="block text-xs text-muted">ประหยัดเน็ต — เล่นเฉพาะสตูดิโอและช่องที่สร้างในแอป</span>
+            </span>
+            <Toggle on={forced} />
+          </button>
+          <div className="flex items-center gap-3 p-4">
+            <MoonIcon size={20} className="text-gold" />
+            <span className="flex-1 text-sm">ตั้งเวลาปิดเสียง</span>
+            <div className="flex gap-1.5">
+              {[15, 30, 60].map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => {
+                    useApp.getState().setSleepMinutes(m);
+                    useApp.getState().toast(`ปิดเสียงใน ${m} นาที`);
+                  }}
+                  className="h-8 rounded-full bg-subtle px-2.5 text-xs text-muted ring-gold"
+                >
+                  {m}
+                </button>
+              ))}
+              {sleepEndsAt ? (
+                <button
+                  type="button"
+                  onClick={() => useApp.getState().setSleepMinutes(null)}
+                  className="h-8 rounded-full bg-gold-grad px-2.5 text-xs text-accent-fg"
+                >
+                  ปิด
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="mt-10 flex flex-col items-center gap-1">
+        <Logo className="text-3xl" />
+        <p className="text-[10px] tracking-[0.3em] text-gold-deep">LIVE YOUR MOMENT</p>
+        <p className="mt-3 max-w-xs text-center text-[11px] leading-relaxed text-faint">
+          สถานีและช่องทั้งหมดมาจากสตรีมสาธารณะที่เปิดให้เล่นข้ามแพลตฟอร์มได้ ภาพยนตร์เป็นผลงานลิขสิทธิ์เปิด (Blender
+          Foundation) เวอร์ชัน 0.2
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Toggle({ on }: { on: boolean }) {
+  return (
+    <span className={cn("relative h-6 w-11 rounded-full transition-colors", on ? "bg-gold" : "bg-line")}>
+      <span className={cn("absolute top-0.5 size-5 rounded-full bg-fg transition-all", on ? "left-[22px]" : "left-0.5")} />
+    </span>
+  );
+}
+
+function Shelf({ title, empty, children }: { title: string; empty: string; children: ReactNode[] }) {
+  return (
+    <section className="mt-7">
+      <h2 className="mb-2 text-xs text-faint">{title}</h2>
+      {children.length === 0 ? (
+        <p className="rounded-2xl bg-elevated p-4 text-sm text-muted">{empty}</p>
+      ) : (
+        <div className="divide-y divide-line rounded-2xl bg-elevated px-4">{children}</div>
+      )}
+    </section>
+  );
+}
+
+function Row({ label, meta, onClick }: { label: string; meta: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex h-12 w-full items-center gap-3 text-left">
+      <span className="flex-1 truncate text-sm">{label}</span>
+      <span className="text-xs text-faint">{meta}</span>
+      <ChevronRight size={16} className="text-faint" />
+    </button>
+  );
+}

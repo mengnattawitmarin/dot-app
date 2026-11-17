@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.env*
+# native build outputs (platform folders themselves are committed once generated)
+android/app/build/
+android/.gradle/
+android/build/
+ios/App/Pods/
+ios/App/build/
+ios/DerivedData/
+build/

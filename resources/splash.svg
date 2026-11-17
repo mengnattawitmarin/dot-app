@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1000 -1000 3024 3024">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6dc9c"/><stop offset=".5" stop-color="#d6a856"/><stop offset="1" stop-color="#9a7230"/></linearGradient>
+    <radialGradient id="bg" cx=".5" cy=".3" r=".8"><stop offset="0" stop-color="#1d1912"/><stop offset="1" stop-color="#0b0a08"/></radialGradient>
+  </defs>
+  <rect x="-1000" y="-1000" width="3024" height="3024" fill="#0b0a08"/>
+  <g fill="url(#g)">
+    <rect x="262.0" y="379.4" width="5" height="20.6" rx="2.5"/>
+    <rect x="274.5" y="378.3" width="5" height="21.7" rx="2.5"/>
+    <rect x="287.0" y="377.8" width="5" height="22.2" rx="2.5"/>
+    <rect x="299.5" y="376.3" width="5" height="23.7" rx="2.5"/>
+    <rect x="312.0" y="373.9" width="5" height="26.1" rx="2.5"/>
+    <rect x="324.5" y="373.6" width="5" height="26.4" rx="2.5"/>
+    <rect x="337.0" y="366.7" width="5" height="33.3" rx="2.5"/>
+    <rect x="349.5" y="366.5" width="5" height="33.5" rx="2.5"/>
+    <rect x="362.0" y="356.4" width="5" height="43.6" rx="2.5"/>
+    <rect x="374.5" y="349.5" width="5" height="50.5" rx="2.5"/>
+    <rect x="387.0" y="346.5" width="5" height="53.5" rx="2.5"/>
+    <rect x="399.5" y="325.1" width="5" height="74.9" rx="2.5"/>
+    <rect x="412.0" y="336.2" width="5" height="63.8" rx="2.5"/>
+    <rect x="424.5" y="300.4" width="5" height="99.6" rx="2.5"/>
+    <rect x="437.0" y="299.0" width="5" height="101.0" rx="2.5"/>
+    <rect x="449.5" y="287.2" width="5" height="112.8" rx="2.5"/>
+    <rect x="462.0" y="260.4" width="5" height="139.6" rx="2.5"/>
+    <rect x="474.5" y="293.6" width="5" height="106.4" rx="2.5"/>
+    <rect x="487.0" y="238.0" width="5" height="162.0" rx="2.5"/>
+    <rect x="499.5" y="266.3" width="5" height="133.7" rx="2.5"/>
+    <rect x="512.0" y="244.2" width="5" height="155.8" rx="2.5"/>
+    <rect x="524.5" y="242.1" width="5" height="157.9" rx="2.5"/>
+    <rect x="537.0" y="276.1" width="5" height="123.9" rx="2.5"/>
+    <rect x="549.5" y="245.9" width="5" height="154.1" rx="2.5"/>
+    <rect x="562.0" y="295.6" width="5" height="104.4" rx="2.5"/>
+    <rect x="574.5" y="275.0" width="5" height="125.0" rx="2.5"/>
+    <rect x="587.0" y="295.9" width="5" height="104.1" rx="2.5"/>
+    <rect x="599.5" y="313.9" width="5" height="86.1" rx="2.5"/>
+    <rect x="612.0" y="312.9" width="5" height="87.1" rx="2.5"/>
+    <rect x="624.5" y="346.9" width="5" height="53.1" rx="2.5"/>
+    <rect x="637.0" y="337.0" width="5" height="63.0" rx="2.5"/>
+    <rect x="649.5" y="352.9" width="5" height="47.1" rx="2.5"/>
+    <rect x="662.0" y="357.8" width="5" height="42.2" rx="2.5"/>
+    <rect x="674.5" y="362.3" width="5" height="37.7" rx="2.5"/>
+    <rect x="687.0" y="370.8" width="5" height="29.2" rx="2.5"/>
+    <rect x="699.5" y="370.7" width="5" height="29.3" rx="2.5"/>
+    <rect x="712.0" y="375.4" width="5" height="24.6" rx="2.5"/>
+    <rect x="724.5" y="376.1" width="5" height="23.9" rx="2.5"/>
+    <rect x="737.0" y="377.5" width="5" height="22.5" rx="2.5"/>
+    <rect x="749.5" y="378.7" width="5" height="21.3" rx="2.5"/>
+    <rect x="762.0" y="378.9" width="5" height="21.1" rx="2.5"/>
+    <text x="512" y="660" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="300" letter-spacing="-12">Do.T</text>
+    <text x="512" y="770" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-weight="600" font-size="46" letter-spacing="6">RADIO · TV · ENTERTAINMENT</text>
+    <circle cx="790" cy="400" r="22"/>
+  </g>
+</svg>

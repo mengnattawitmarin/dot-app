@@ -1,0 +1,37 @@
+name: iOS build check
+
+# Compiles the iOS app for the simulator (no signing).
+# Installing on a real iPhone needs an Apple Developer account — see README.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Add iOS platform (first run)
+        run: |
+          if [ ! -d ios ]; then npx cap add ios; fi
+          node scripts/patch-native.mjs
+          npx capacitor-assets generate --ios --iconBackgroundColor '#0b0a08' --splashBackgroundColor '#0b0a08' || true
+          npx cap sync ios
+
+      - name: Build for simulator
+        run: |
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App \
+            -sdk iphonesimulator -configuration Debug \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
