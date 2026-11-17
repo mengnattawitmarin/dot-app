@@ -8,20 +8,25 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
 
+// genres = Apple Podcasts genre ids; keywords are matched against show name + description.
 export const CATEGORIES = [
-  { id: "horror", label: "สยองขวัญ", terms: ["เรื่องผี", "เล่าเรื่องผี", "the ghost radio", "สยองขวัญ", "เรื่องหลอน"] },
-  { id: "story", label: "เรื่องเล่า", terms: ["เล่าเรื่อง", "เรื่องเล่า", "เรื่องจริง", "ประสบการณ์"] },
-  { id: "mystery", label: "คดี & ลึกลับ", terms: ["คดีดัง", "คดีฆาตกรรม", "เรื่องลึกลับ", "true crime thai"] },
-  { id: "knowledge", label: "ความรู้", terms: ["ความรู้", "วิทยาศาสตร์", "รอบรู้", "สารคดี"] },
-  { id: "history", label: "ประวัติศาสตร์", terms: ["ประวัติศาสตร์", "ประวัติศาสตร์ไทย", "ย้อนอดีต"] },
-  { id: "novel", label: "นิยายเสียง", terms: ["นิยายเสียง", "หนังสือเสียง", "อ่านนิยาย", "นิทาน"] },
-  { id: "drama", label: "ภาพยนตร์ & ละครเสียง", terms: ["ละครเสียง", "ละครวิทยุ", "audio drama thai", "หนังเสียง"] },
-  { id: "self", label: "พัฒนาตัวเอง", terms: ["พัฒนาตัวเอง", "จิตวิทยา", "แรงบันดาลใจ"] },
-  { id: "business", label: "ธุรกิจ & การเงิน", terms: ["ธุรกิจ", "การเงิน", "การลงทุน"] },
-  { id: "dharma", label: "ธรรมะ", terms: ["ธรรมะ", "ฟังธรรม"] },
+  { id: "horror", label: "สยองขวัญ", genres: [], terms: ["เรื่องผี", "เล่าเรื่องผี", "the ghost radio", "สยองขวัญ", "เรื่องหลอน", "ผีไทย", "เรื่องลี้ลับ"], keywords: ["ผี", "หลอน", "สยอง", "ghost", "horror", "ลี้ลับ", "อาถรรพ์", "วิญญาณ"], evergreen: true },
+  { id: "mystery", label: "คดี & ลึกลับ", genres: ["1488"], terms: ["คดีดัง", "คดีฆาตกรรม", "true crime", "ฆาตกร", "อาชญากรรม"], keywords: ["คดี", "ฆาตกร", "ฆาตกรรม", "อาชญากรรม", "crime", "ปริศนา", "ลึกลับ"], evergreen: true },
+  { id: "story", label: "เรื่องเล่า", genres: ["1302"], terms: ["เล่าเรื่อง", "เรื่องเล่า", "เรื่องจริง", "ประสบการณ์ชีวิต"], keywords: ["เรื่องเล่า", "เล่าเรื่อง", "เรื่องจริง", "ประสบการณ์", "story"] },
+  { id: "novel", label: "นิยายเสียง", genres: ["1483", "1482"], terms: ["นิยายเสียง", "หนังสือเสียง", "อ่านนิยาย", "นิทาน", "audiobook", "เรื่องสั้น"], keywords: ["นิยาย", "หนังสือเสียง", "นิทาน", "อ่านให้ฟัง", "เรื่องสั้น", "audiobook", "วรรณกรรม"], evergreen: true },
+  { id: "drama", label: "ภาพยนตร์ & ละครเสียง", genres: ["1484", "1485", "1486"], terms: ["ละครเสียง", "ละครวิทยุ", "audio drama", "หนังเสียง", "radio drama"], keywords: ["ละครเสียง", "ละครวิทยุ", "audio drama", "radio drama", "หนังเสียง", "ภาพยนตร์เสียง"], evergreen: true },
+  { id: "history", label: "ประวัติศาสตร์", genres: ["1487"], terms: ["ประวัติศาสตร์", "ประวัติศาสตร์ไทย", "ย้อนอดีต", "history thai"], keywords: ["ประวัติศาสตร์", "history", "ย้อนอดีต", "สมัยก่อน", "พงศาวดาร"], evergreen: true },
+  { id: "knowledge", label: "ความรู้", genres: ["1533", "1304", "1543"], terms: ["ความรู้", "วิทยาศาสตร์", "รอบรู้", "สารคดี", "ความรู้รอบตัว"], keywords: ["ความรู้", "วิทยาศาสตร์", "science", "สารคดี", "รู้ไว้", "อธิบาย"] },
+  { id: "self", label: "พัฒนาตัวเอง", genres: ["1500", "1544"], terms: ["พัฒนาตัวเอง", "จิตวิทยา", "แรงบันดาลใจ", "สรุปหนังสือ"], keywords: ["พัฒนาตัวเอง", "จิตวิทยา", "แรงบันดาลใจ", "mindset", "self"] },
+  { id: "business", label: "ธุรกิจ & การเงิน", genres: ["1321", "1412", "1493"], terms: ["ธุรกิจ", "การเงิน", "การลงทุน", "หุ้น"], keywords: ["ธุรกิจ", "การเงิน", "ลงทุน", "หุ้น", "business", "money"] },
+  { id: "dharma", label: "ธรรมะ", genres: ["1438", "1314"], terms: ["ธรรมะ", "ฟังธรรม", "พระธรรมเทศนา", "สมาธิ"], keywords: ["ธรรมะ", "ธรรม", "พระ", "สมาธิ", "dharma", "buddh"] },
 ];
 
-const SHOWS_PER_CATEGORY = 10;
+// News / talk radio relays clutter story categories.
+const EXCLUDE_GENRES = new Set(["1489", "1526", "1527", "1528", "1529", "1530", "1531", "1545", "1310", "1511"]);
+const EXCLUDE_WORDS = /สวท\.|\bFM\b|news|ข่าว|sbs|เรดิโอ|radio thailand|ภาษาไทย.*business/i;
+
+const SHOWS_PER_CATEGORY = 12;
 const EPISODES_PER_SHOW = 15;
 const UA = "DoT-Podcasts/1.0 (+https://github.com/mengnattawitmarin/dot-app)";
 
@@ -110,14 +115,36 @@ async function get(url, timeout = 15000) {
   }
 }
 
-async function search(term) {
-  const url = `https://itunes.apple.com/search?media=podcast&entity=podcast&country=TH&limit=15&term=${encodeURIComponent(term)}`;
+async function search(term, genreId) {
+  const genre = genreId ? `&genreId=${genreId}` : "";
+  const url = `https://itunes.apple.com/search?media=podcast&entity=podcast&country=TH&limit=50${genre}&term=${encodeURIComponent(term)}`;
   try {
     return JSON.parse(await get(url)).results ?? [];
   } catch (e) {
-    console.warn(`search "${term}" failed: ${e.message}`);
+    console.warn(`search "${term}"${genre} failed: ${e.message}`);
     return [];
   }
+}
+
+const hasThai = (s) => /[\u0E00-\u0E7F]/.test(s);
+
+/** Best-fitting category for a show, or null. Genre match beats keywords in the name beats description. */
+export function classify(name, desc, genreIds) {
+  let best = null;
+  let bestScore = 0;
+  const n = name.toLowerCase();
+  const d = desc.toLowerCase();
+  for (const cat of CATEGORIES) {
+    let score = 0;
+    if (cat.genres.some((g) => genreIds.includes(g))) score += 3;
+    if (cat.keywords.some((k) => n.includes(k.toLowerCase()))) score += 4;
+    if (cat.keywords.some((k) => d.includes(k.toLowerCase()))) score += 1;
+    if (score > bestScore) {
+      best = cat.id;
+      bestScore = score;
+    }
+  }
+  return bestScore >= 2 ? best : null;
 }
 
 async function main() {
@@ -127,37 +154,47 @@ async function main() {
     return;
   }
 
-  const picked = new Map(); // collectionId → { result, category }
+  // 1) Collect candidates: keyword searches + the same words restricted to each category's genres.
+  const candidates = new Map(); // collectionId → iTunes result
   for (const cat of CATEGORIES) {
-    let count = 0;
     for (const term of cat.terms) {
-      for (const r of await search(term)) {
-        if (count >= SHOWS_PER_CATEGORY) break;
-        if (!r.feedUrl || picked.has(r.collectionId)) continue;
-        picked.set(r.collectionId, { r, category: cat.id });
-        count += 1;
-      }
-      if (count >= SHOWS_PER_CATEGORY) break;
-      await new Promise((ok) => setTimeout(ok, 400)); // be polite to the search API
+      for (const r of await search(term)) if (r.feedUrl) candidates.set(r.collectionId, r);
+      await new Promise((ok) => setTimeout(ok, 350)); // be polite to the search API
     }
-    console.log(`${cat.label}: ${count} shows`);
+    for (const g of cat.genres) {
+      for (const term of ["ไทย", "thai", "เรื่อง"]) {
+        for (const r of await search(term, g)) if (r.feedUrl) candidates.set(r.collectionId, r);
+        await new Promise((ok) => setTimeout(ok, 350));
+      }
+    }
   }
+  console.log(`${candidates.size} candidate shows`);
 
+  // 2) Read feeds, keep Thai-language, recently active (evergreen genres may be older), classify.
   const shows = [];
-  const queue = [...picked.values()];
+  const queue = [...candidates.values()].filter((r) => {
+    const genres = (r.genreIds ?? []).map(String);
+    if (genres.some((g) => EXCLUDE_GENRES.has(g)) && !genres.some((g) => CATEGORIES.some((c) => c.genres.includes(g)))) return false;
+    return !EXCLUDE_WORDS.test(r.collectionName ?? "");
+  });
   await Promise.all(
-    Array.from({ length: 6 }, async () => {
+    Array.from({ length: 8 }, async () => {
       while (queue.length) {
-        const { r, category } = queue.shift();
+        const r = queue.shift();
         try {
           const feed = parseFeed(await get(r.feedUrl));
           if (!feed.episodes.length) continue;
-          // Skip shows that went quiet more than two years ago.
-          if (feed.episodes[0].date && Date.now() - feed.episodes[0].date > 2 * 365 * 864e5) continue;
+          const name = feed.title || r.collectionName;
+          if (!hasThai(`${name} ${feed.desc} ${feed.episodes[0].title}`)) continue;
+          const category = classify(name, feed.desc, (r.genreIds ?? []).map(String));
+          if (!category) continue;
+          const cat = CATEGORIES.find((c) => c.id === category);
+          const maxAge = (cat.evergreen ? 6 : 2) * 365 * 864e5;
+          if (feed.episodes[0].date && Date.now() - feed.episodes[0].date > maxAge) continue;
           shows.push({
             id: `pod-${r.collectionId}`,
             category,
-            name: feed.title || r.collectionName,
+            name,
             author: feed.author || r.artistName || "",
             desc: feed.desc,
             image: r.artworkUrl600 || feed.image || "",
@@ -171,6 +208,19 @@ async function main() {
       }
     }),
   );
+
+  // 3) Cap each category, freshest first.
+  const capped = [];
+  for (const cat of CATEGORIES) {
+    const list = shows
+      .filter((x) => x.category === cat.id)
+      .sort((a, b) => (b.episodes[0]?.date ?? 0) - (a.episodes[0]?.date ?? 0))
+      .slice(0, SHOWS_PER_CATEGORY);
+    console.log(`${cat.label}: ${list.length}`);
+    capped.push(...list);
+  }
+  shows.length = 0;
+  shows.push(...capped);
 
   const order = Object.fromEntries(CATEGORIES.map((c, i) => [c.id, i]));
   shows.sort((a, b) => order[a.category] - order[b.category] || (b.episodes[0]?.date ?? 0) - (a.episodes[0]?.date ?? 0));
