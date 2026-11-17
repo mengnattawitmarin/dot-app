@@ -1,7 +1,7 @@
 import { getStation, stationQueue } from "@/lib/catalog";
 import { pauseRadio, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
-import { renderArtwork } from "@/lib/now-playing";
+import { renderArtwork, splitSong } from "@/lib/now-playing";
 
 /**
  * Lock-screen / notification / Control Center controls via the Media Session API.
@@ -31,6 +31,7 @@ export function setupMediaSession() {
   safe("nexttrack", () => void stepStation(1, queue()));
 
   let lastId: string | null = null;
+  let lastSong: string | null = null;
   const sync = () => {
     const s = useApp.getState();
     const station = s.now ? getStation(s.now.id) : undefined;
@@ -38,13 +39,15 @@ export function setupMediaSession() {
       ms.playbackState = "none";
       return;
     }
-    if (station.id !== lastId) {
+    if (station.id !== lastId || s.songTitle !== lastSong) {
       lastId = station.id;
+      lastSong = s.songTitle;
+      const song = splitSong(s.songTitle);
       const art = renderArtwork(station);
       ms.metadata = new MediaMetadata({
-        title: station.name,
-        artist: station.kind === "live" ? `${station.city} · สด` : "Do.T สตูดิโอในเครื่อง",
-        album: "Do.T RADIO",
+        title: song ? song.title : station.name,
+        artist: song ? song.artist || station.name : station.kind === "live" ? `${station.city} · สด` : "Do.T สตูดิโอในเครื่อง",
+        album: song ? station.name : "Do.T RADIO",
         artwork: art ? [{ src: `data:image/jpeg;base64,${art}`, sizes: "512x512", type: "image/jpeg" }, ...artwork] : artwork,
       });
     }

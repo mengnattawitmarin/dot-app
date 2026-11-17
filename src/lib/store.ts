@@ -58,6 +58,9 @@ export type AppState = {
   catalogVersion: number;
   bumpCatalog: () => void;
   /** notifications inbox */
+  /** "Artist - Title" read from the live stream (ICY metadata), null when unknown */
+  songTitle: string | null;
+  setSongTitle: (title: string | null) => void;
   noticesOpen: boolean;
   setNoticesOpen: (open: boolean) => void;
   noticesVersion: number;
@@ -91,7 +94,7 @@ export const useApp = create<AppState>((set, get) => ({
   tab: "home",
   setTab: (tab) => set({ tab, nowOpen: false }),
   now: null,
-  setNow: (now) => set({ now }),
+  setNow: (now) => set({ now, songTitle: now?.id === get().now?.id ? get().songTitle : null }),
   playing: false,
   setPlaying: (playing) => set({ playing }),
   output: "idle",
@@ -148,6 +151,8 @@ export const useApp = create<AppState>((set, get) => ({
   setSleepMinutes: (minutes) => {
     set({ sleepEndsAt: minutes == null ? null : Date.now() + minutes * 60_000 });
   },
+  songTitle: null,
+  setSongTitle: (songTitle) => set({ songTitle }),
   noticesOpen: false,
   setNoticesOpen: (noticesOpen) => set({ noticesOpen }),
   noticesVersion: 0,

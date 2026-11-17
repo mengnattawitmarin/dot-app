@@ -10,6 +10,7 @@ import { loadThaiStations } from "@/lib/radio-browser";
 import { initAuth } from "@/lib/supabase";
 import { pullFavorites, watchFavorites } from "@/lib/cloud";
 import { resumePush } from "@/lib/push";
+import { splitSong } from "@/lib/now-playing";
 import { SignInSheet } from "@/components/account";
 import { NoticesSheet, useUnreadCount } from "@/components/notices-sheet";
 import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
@@ -47,6 +48,7 @@ export function App() {
   const activeChannel = useApp((s) => s.activeChannel);
   const station = now ? getStation(now.id) : undefined;
   const unread = useUnreadCount();
+  const song = splitSong(useApp((s) => s.songTitle));
   const title = activeTitle ? getTitle(activeTitle) : undefined;
   const channel = activeChannel ? getChannel(activeChannel) : undefined;
 
@@ -157,8 +159,10 @@ export function App() {
           <button type="button" onClick={() => useApp.getState().setNowOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
             <StationArt station={station} size="md" className="size-10 rounded-lg" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-medium">{station.name}</span>
-              <span className="block truncate text-xs text-muted">{playing ? "กำลังเล่น" : "หยุดชั่วคราว"} · {station.city}</span>
+              <span className="block truncate text-sm font-medium">{song ? song.title : station.name}</span>
+              <span className="block truncate text-xs text-muted">
+                {song ? [song.artist, station.name].filter(Boolean).join(" · ") : `${playing ? "กำลังเล่น" : "หยุดชั่วคราว"} · ${station.city}`}
+              </span>
             </span>
             <Waveform active={playing} live={station.kind === "live"} bars={10} height={20} className="w-12" />
           </button>

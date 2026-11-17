@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getStation, stationQueue } from "@/lib/catalog";
 import { StationArt } from "@/components/art";
+import { splitSong } from "@/lib/now-playing";
 import { applyVolume, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, SkipBack, SkipForward, VolumeIcon } from "@/components/icons";
@@ -17,6 +18,7 @@ export function NowScreen() {
   const favorites = useApp((s) => s.favorites);
   const sleepEndsAt = useApp((s) => s.sleepEndsAt);
   const offline = useApp(selectOffline);
+  const songRaw = useApp((s) => s.songTitle);
   const [left, setLeft] = useState("");
 
   useEffect(() => {
@@ -72,6 +74,16 @@ export function NowScreen() {
         <p className="mt-1.5 text-center text-sm text-muted">
           {station.blurb} · {station.city}
         </p>
+        {(() => {
+          const song = splitSong(songRaw);
+          return song ? (
+            <div className="rise mt-5 w-full rounded-2xl bg-elevated px-4 py-3 text-center ring-gold">
+              <p className="text-[10px] tracking-[0.25em] text-gold">กำลังเล่นเพลง</p>
+              <p className="mt-1 line-clamp-2 text-lg font-semibold leading-snug">{song.title}</p>
+              {song.artist ? <p className="truncate text-sm text-muted">{song.artist}</p> : null}
+            </div>
+          ) : null;
+        })()}
         <Waveform active={playing} live={live} className="mt-8 w-full" height={56} />
       </div>
 

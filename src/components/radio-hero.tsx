@@ -1,7 +1,8 @@
 import { getStation } from "@/lib/catalog";
 import { playStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
-import { PauseIcon, PlayIcon } from "@/components/icons";
+import { MusicIcon, PauseIcon, PlayIcon } from "@/components/icons";
+import { splitSong } from "@/lib/now-playing";
 import { LiveBadge, Waveform } from "@/components/ui";
 
 /** Abstract studio-mic artwork (gold rim light), drawn in SVG. */
@@ -38,6 +39,8 @@ export function RadioHero({ compact = false }: { compact?: boolean }) {
   const playing = useApp((s) => s.playing && s.output === "radio");
   const station = (now ? getStation(now.id) : undefined) ?? getStation(offline ? "studio-drive" : "th-cool");
   const isCurrent = Boolean(now && station && now.id === station.id);
+  const songRaw = useApp((s) => s.songTitle); // select the string, not a new object, to avoid re-render loops
+  const song = isCurrent ? splitSong(songRaw) : null;
   const live = station?.kind === "live";
 
   function onPlay() {
@@ -63,6 +66,15 @@ export function RadioHero({ compact = false }: { compact?: boolean }) {
 
         <p className="mt-5 text-[11px] text-faint">{isCurrent && playing ? "กำลังออกอากาศ" : "พร้อมออกอากาศ"}</p>
         <p className="truncate text-sm font-medium text-gold-light">{station?.name}</p>
+        {song ? (
+          <p className="rise mt-1 flex min-w-0 items-center gap-1.5 text-[13px] text-fg">
+            <MusicIcon size={14} className="shrink-0 text-gold" />
+            <span className="truncate">
+              <b className="font-semibold">{song.title}</b>
+              {song.artist ? <span className="text-muted"> · {song.artist}</span> : null}
+            </span>
+          </p>
+        ) : null}
         <Waveform active={isCurrent && playing} live={live} className="mt-2" />
         <div className="mt-3 flex justify-center">
           <button

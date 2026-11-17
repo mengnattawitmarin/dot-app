@@ -185,6 +185,11 @@ export async function toggleRadio() {
   await playStation(station);
 }
 
+/** URL of the live stream currently attached to the player (after any fallback). */
+export function currentStreamUrl(): string | null {
+  return activeStation?.kind === "live" ? (urls[urlIndex] ?? null) : null;
+}
+
 export function pauseRadio() {
   audio?.pause();
   if (studio.isRunning()) studio.pause();

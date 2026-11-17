@@ -1,6 +1,6 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 import { getStation, mark, stationFreq, stationQueue, type Station } from "@/lib/catalog";
-import { pauseRadio, stepStation, toggleRadio } from "@/lib/player";
+import { currentStreamUrl, pauseRadio, stepStation, toggleRadio } from "@/lib/player";
 import { selectOffline, useApp } from "@/lib/store";
 import { hashPalette, STUDIO_PALETTE } from "@/components/art";
 
@@ -11,8 +11,19 @@ import { hashPalette, STUDIO_PALETTE } from "@/components/art";
 type NowPlayingPlugin = {
   update(options: { title: string; artist: string; playing: boolean; artwork?: string }): Promise<void>;
   clear(): Promise<void>;
+  watchMetadata(options: { url: string }): Promise<void>;
+  stopMetadata(): Promise<void>;
   addListener(event: "action", cb: (e: { action: "play" | "pause" | "next" | "prev" }) => void): Promise<PluginListenerHandle>;
+  addListener(event: "metadata", cb: (e: { url: string; title: string }) => void): Promise<PluginListenerHandle>;
 };
+
+/** Split "Artist - Title" for display; falls back to the whole string as the title. */
+export function splitSong(raw: string | null): { title: string; artist: string } | null {
+  if (!raw) return null;
+  const i = raw.indexOf(" - ");
+  if (i > 0 && i < raw.length - 3) return { artist: raw.slice(0, i).trim(), title: raw.slice(i + 3).trim() };
+  return { title: raw.trim(), artist: "" };
+}
 
 const NowPlaying = registerPlugin<NowPlayingPlugin>("NowPlaying");
 const enabled = Capacitor.getPlatform() === "android";
@@ -95,8 +106,23 @@ export function setupNowPlaying() {
     }
   });
 
+  // ---- song titles from the stream ----
+  let watchedUrl: string | null = null;
+  void NowPlaying.addListener("metadata", ({ url, title }) => {
+    if (url === watchedUrl) useApp.getState().setSongTitle(title);
+  });
+  const syncMetadata = () => {
+    const s = useApp.getState();
+    const url = s.playing && s.output === "radio" ? currentStreamUrl() : null;
+    if (url === watchedUrl) return;
+    watchedUrl = url;
+    if (url) void NowPlaying.watchMetadata({ url }).catch(() => undefined);
+    else void NowPlaying.stopMetadata().catch(() => undefined);
+  };
+
   let lastId: string | null = null;
   let lastPlaying: boolean | null = null;
+  let lastSong: string | null = null;
   let artwork = "";
 
   const sync = () => {
@@ -109,14 +135,16 @@ export function setupNowPlaying() {
       lastPlaying = null;
       return;
     }
-    if (station.id === lastId && playing === lastPlaying) return;
+    if (station.id === lastId && playing === lastPlaying && s.songTitle === lastSong) return;
     const changed = station.id !== lastId;
     if (changed) artwork = renderArtwork(station);
     lastId = station.id;
     lastPlaying = playing;
+    lastSong = s.songTitle;
+    const song = splitSong(s.songTitle);
     void NowPlaying.update({
-      title: station.name,
-      artist: station.kind === "live" ? `${station.city} · สด` : "สตูดิโอในเครื่อง",
+      title: song ? song.title : station.name,
+      artist: song ? [song.artist, station.name].filter(Boolean).join(" · ") : station.kind === "live" ? `${station.city} · สด` : "สตูดิโอในเครื่อง",
       playing,
       artwork: changed ? artwork : undefined,
     }).catch(() => {
@@ -125,6 +153,9 @@ export function setupNowPlaying() {
     });
   };
 
-  useApp.subscribe(sync);
+  useApp.subscribe(() => {
+    syncMetadata();
+    sync();
+  });
   sync();
 }
