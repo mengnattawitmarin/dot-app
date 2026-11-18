@@ -24,7 +24,7 @@ import { Chip, SectionHeader } from "@/components/ui";
 
 type View = { kind: "home" } | { kind: "teacher"; id: string } | { kind: "album"; showId: string; from?: string };
 
-const SRC_LABEL: Record<string, string> = { archive: "archive.org", podcast: "พอดแคสต์", web: "เว็บไซต์วัด" };
+const SRC_LABEL: Record<string, string> = { archive: "archive.org", podcast: "พอดแคสต์", web: "เว็บไซต์วัด", theme: "รวมจากทุกแหล่ง", tumma: "tumma.in" };
 
 /** Typographic emblem for a teacher — generated art, no photos. */
 export function TeacherEmblem({ teacher, className }: { teacher: Pick<Teacher, "name">; className?: string }) {

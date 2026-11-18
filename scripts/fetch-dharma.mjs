@@ -29,11 +29,36 @@ export const TEACHERS = [
     full: "พระราชพรหมยาน (หลวงพ่อฤาษีลิงดำ)",
     place: "วัดจันทาราม (ท่าซุง) อุทัยธานี",
     blurb: "กรรมฐาน ๔๐ มโนมยิทธิ พระโสดาบัน คำสอนตอนเช้า-เย็น และเรื่องเล่าจากวัดท่าซุง",
-    terms: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤาษีลิงดํา", "ฤษีลิงดำ", "พระราชพรหมญาณ", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "lingdam", "พระราชพรหมยาน", "หลวงพ่อพระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "วีระ ถาวโร", "ruesi ling dam", "ratchaphromyan", "watthasung", "wat tha sung"],
-    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"วีระ ถาวโร\"", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\""],
-    pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง", "หลวงพ่อมหาวีระ"],
+    terms: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤาษีลิงดํา", "ฤษีลิงดำ", "พระราชพรหมญาณ", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "lingdam", "ธัมมวิโมกข์", "ฤาษีสอนลูก", "ฤๅษีสอนลูก", "จุไรท่องเที่ยว", "ซอยสายลม", "พระราชพรหมยาน", "หลวงพ่อพระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "วีระ ถาวโร", "ruesi ling dam", "ratchaphromyan", "watthasung", "wat tha sung"],
+    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"วีระ ถาวโร\"", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\"", "ธัมมวิโมกข์", "ฤาษีสอนลูก", "ซอยสายลม", "จุไรท่องเที่ยว", "หลวงพ่อปาน บางนมโค"],
+    pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "ฤๅษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง", "หลวงพ่อมหาวีระ", "ธัมมวิโมกข์", "ฤาษีสอนลูก", "หลวงพ่อฤาษี", "ท่าซุง"],
     descOk: true, // names are unique enough to trust item descriptions
-    max: 160,
+    max: 200,
+    // ชุดเรื่องเด่น: gathered across every source by title, so each story/วาระ is one list.
+    themes: [
+      { title: "ประวัติหลวงพ่อปาน วัดบางนมโค", words: ["หลวงพ่อปาน", "หลวงปู่ปาน", "บางนมโค", "อาลัยหลวงพ่อปาน"] },
+      { title: "ธัมมวิโมกข์", words: ["ธัมมวิโมกข์", "ธรรมวิโมกข์", "วิโมกข์"] },
+      { title: "ถาม-ตอบ คำสอนที่ซอยสายลม", words: ["สายลม"] },
+      { title: "จุไรท่องเที่ยวดวงดาว", words: ["จุไร"] },
+      { title: "หนังสืออ่านเล่น · เล่มนอกเวลา", words: ["อ่านเล่น", "นอกเวลา"] },
+      { title: "ฤาษีสอนลูก", words: ["ฤาษีสอนลูก", "ฤๅษีสอนลูก", "สอนลูกใต้ร่มไทร", "สอนลูกภาค"] },
+      { title: "ประสบการณ์มโนมยิทธิ รัชนี เจนรถา", words: ["รัชนี", "เจนรถา"] },
+      { title: "คำสอนที่วิหารแก้ว 100 เมตร", words: ["วิหารแก้ว", "100 เมตร", "๑๐๐ เมตร"] },
+      { title: "กรรมฐาน 40", words: ["กรรมฐาน 40", "กรรมฐาน ๔๐", "กสิณ", "กสิน", "อนุสสติ", "อสุภ", "จตุธาตุ", "อาหาเร", "พรหมวิหาร", "อรูป"] },
+      { title: "มโนมยิทธิ · อภิญญา", words: ["มโนมยิทธิ", "อภิญญา", "ทิพจักขุ", "ทิพยจักษุ"] },
+      { title: "สุกขวิปัสสโก · เตวิชโช · ฉฬภิญโญ · ปฏิสัมภิทัปปัตโต", words: ["สุกขวิปัสสโก", "เตวิชโช", "ฉฬภิญโญ", "ปฏิสัมภิทั"] },
+      { title: "สังโยชน์ · พระโสดาบัน · ทางสู่นิพพาน", words: ["สังโยชน์", "โสดาบัน", "สกิทาคา", "อนาคา", "อรหัต", "ทางสู่พระนิพพาน", "ไปนิพพาน"] },
+      { title: "บารมี 10 · วิปัสสนาญาณ 9", words: ["บารมี", "วิปัสสนาญาณ", "ญาณ 8", "ญาณ 9"] },
+      { title: "จริต 6", words: ["จริต"] },
+      { title: "มหาชาดก (ทศชาติ)", words: ["ทศชาติ", "ชาดก", "เตมีย์", "มหาชนก", "สุวรรณสาม", "เนมีราช", "มโหสถ", "ภูริทัต", "จันทกุมาร", "วิฑูร", "เวสสันดร"] },
+      { title: "ไตรภูมิ · นรก · สวรรค์", words: ["ไตรภูมิ", "นรก", "สวรรค์", "เปรต", "พรหมโลก", "ดาวดึงส์"] },
+      { title: "พระสูตร", words: ["สูตร", "พระนางสามาวดี"] },
+      { title: "ตำนาน · ประวัติวัดท่าซุง", words: ["ตำนาน", "ประวัติ", "องค์ปฐม", "พุดตาล"] },
+      { title: "เทศน์วันสำคัญ", words: ["วิสาขบูชา", "มาฆบูชา", "อาสาฬห", "เข้าพรรษา", "ออกพรรษา", "วันสำคัญ", "ปีใหม่"] },
+      { title: "มรณสัญญา · เมื่อข้าพเจ้าตาย", words: ["มรณ", "ข้าพเจ้าตาย", "บอกเวลาตาย", "หมดสัญญา"] },
+      { title: "กฎของกรรม", words: ["กฎของกรรม", "กฎแห่งกรรม", "ผลแห่งการทำบาป", "หนีนรก"] },
+      { title: "คาถา · สวดมนต์ · น้ำมนต์", words: ["คาถา", "สวดมนต์", "น้ำมนต์", "พุทธมามกะ"] },
+    ],
   },
   {
     id: "mahabua",
@@ -184,6 +209,7 @@ export const TEACHERS = [
 
 /** Topics an album can fall into. First match wins, so the order matters. */
 export const TOPICS = [
+  { id: "featured", label: "ชุดเรื่องเด่น", words: [] },
   { id: "chant", label: "สวดมนต์ · คาถา", words: ["สวดมนต์", "ทำวัตร", "บทสวด", "คาถา", "พระปริตร", "ชินบัญชร", "อิติปิโส", "chant", "เจริญพระพุทธมนต์"] },
   { id: "qa", label: "ถาม-ตอบ · สนทนาธรรม", words: ["ตอบปัญหา", "ถามตอบ", "ถาม-ตอบ", "ถาม ตอบ", "สนทนาธรรม", "ปุจฉา", "วิสัชนา", "q&a", "questions"] },
   { id: "meditation", label: "กรรมฐาน · ฝึกจิต", words: ["กรรมฐาน", "กัมมัฏฐาน", "สมาธิ", "วิปัสสนา", "สมถะ", "อานาปา", "มโนมยิทธิ", "กสิณ", "ภาวนา", "ดูจิต", "เจริญสติ", "สติปัฏฐาน", "ทิพจักขุ", "อภิญญา", "นั่งสมาธิ", "เดินจงกรม", "meditation", "mindfulness", "breath", "concentration"] },
@@ -653,6 +679,44 @@ function dedupe(albums) {
   });
 }
 
+/** Virtual albums that point at talks inside the teacher's other albums (no duplicate URLs). */
+export function buildThemes(teacher, albums) {
+  if (!teacher.themes?.length) return [];
+  const out = [];
+  const norm = (t) => t.toLowerCase().replace(/[\s.\-_,()]+/g, "");
+  for (const theme of teacher.themes) {
+    const words = theme.words.map((w) => w.toLowerCase());
+    const has = (text) => words.some((w) => text.toLowerCase().includes(w));
+    const refs = [];
+    const seen = new Set();
+    albums.forEach((a, ai) => {
+      const whole = has(`${a.group ?? ""} ${a.title}`);
+      a.tracks.forEach((t, ti) => {
+        if (!whole && !has(t.t)) return;
+        const key = norm(t.t);
+        if (seen.has(key)) return;
+        seen.add(key);
+        refs.push([ai, ti]);
+      });
+    });
+    if (refs.length < 2) continue;
+    const capped = refs.slice(0, 500);
+    out.push({
+      id: `th-${teacher.id}-${hash(theme.title)}`,
+      title: theme.title,
+      topic: "featured",
+      src: "theme",
+      link: "",
+      base: "",
+      n: capped.length,
+      dur: capped.reduce((s, [ai, ti]) => s + albums[ai].tracks[ti].d, 0),
+      refs: capped,
+      tracks: [],
+    });
+  }
+  return out;
+}
+
 async function main() {
   const claimed = new Set();
   const out = { updatedAt: new Date().toISOString(), topics: TOPICS.map(({ id, label }) => ({ id, label })), teachers: [] };
@@ -678,8 +742,10 @@ async function main() {
     console.log(`  → ${kept.length} albums, ${tracks} tracks`);
     if (!kept.length) continue;
     const { terms, search, pods, max, ...info } = teacher;
-    const { exclude, descOk, ...pub } = info;
-    out.teachers.push({ ...pub, albums: kept.map(({ _teacher, _pop, _item, ...a }) => a) });
+    const themes = buildThemes(teacher, kept);
+    if (themes.length) console.log(`  themes: ${themes.map((t) => `${t.title} (${t.n})`).join(", ")}`);
+    const { exclude, descOk, themes: _themes, ...pub } = info;
+    out.teachers.push({ ...pub, albums: [...kept, ...themes].map(({ _teacher, _pop, _item, ...a }) => a) });
   }
   const total = out.teachers.reduce((s, t) => s + t.albums.reduce((n, a) => n + a.n, 0), 0);
   console.log(`Total: ${out.teachers.length} teachers, ${total} tracks`);

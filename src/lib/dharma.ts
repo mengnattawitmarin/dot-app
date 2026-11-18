@@ -16,7 +16,7 @@ type RawAlbum = {
   title: string;
   group?: string;
   topic: string;
-  src: "archive" | "podcast" | "web";
+  src: "archive" | "podcast" | "web" | "theme" | "tumma";
   link: string;
   base: string;
   year?: number;
@@ -25,6 +25,8 @@ type RawAlbum = {
   n: number;
   dur: number;
   tracks: RawTrack[];
+  /** Theme albums: [albumIndex, trackIndex] into the same teacher's albums. */
+  refs?: Array<[number, number]>;
 };
 type RawTeacher = { id: string; name: string; full: string; place: string; blurb: string; albums: RawAlbum[] };
 type RawData = { updatedAt?: string; topics?: DharmaTopic[]; teachers?: RawTeacher[] };
@@ -70,13 +72,21 @@ function apply(data: RawData) {
   const teachers: Teacher[] = [];
   for (const t of data.teachers ?? []) {
     const albums: DharmaAlbum[] = [];
+    const urlOf = (a: RawAlbum, tr: RawTrack) => (a.base ? a.base + tr.u.split("/").map(encodeURIComponent).join("/") : tr.u);
     for (const a of t.albums) {
       const showId = `dh-${a.id}`;
-      const episodes = a.tracks
-        .map((tr, i) => ({
+      const items: Array<{ tr: RawTrack; from: RawAlbum }> = a.refs
+        ? a.refs.flatMap(([ai, ti]) => {
+            const from = t.albums[ai];
+            const tr = from?.tracks[ti];
+            return from && tr ? [{ tr, from }] : [];
+          })
+        : a.tracks.map((tr) => ({ tr, from: a }));
+      const episodes = items
+        .map(({ tr, from }, i) => ({
           id: String(i),
           title: tr.t,
-          url: a.base ? a.base + tr.u.split("/").map(encodeURIComponent).join("/") : tr.u,
+          url: urlOf(from, tr),
           date: 0,
           duration: tr.d,
           desc: "",
@@ -84,7 +94,7 @@ function apply(data: RawData) {
         // HTTPS pages can't play plain-HTTP audio; native apps can.
         .filter((e) => native || e.url.startsWith("https:"));
       if (!episodes.length) continue;
-      const { tracks: _tracks, ...rest } = a;
+      const { tracks: _tracks, refs: _refs, ...rest } = a;
       const album: DharmaAlbum = { ...rest, n: episodes.length, teacherId: t.id, showId };
       albums.push(album);
       albumsByShow.set(showId, album);

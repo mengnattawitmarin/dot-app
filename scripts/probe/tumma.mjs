@@ -1,40 +1,42 @@
-// One-off probe: how does tumma.in load its audio? Writes public/probe-tumma.txt
+// One-off probe: tumma.in playlist API. Writes public/probe-tumma.txt
 import fs from "node:fs";
 const UA = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124 Mobile Safari/537.36";
 const out = [];
 const log = (...a) => out.push(a.join(" "));
-async function get(u) {
+async function call(u, method = "GET") {
   try {
-    const r = await fetch(u, { headers: { "User-Agent": UA }, redirect: "follow" });
+    const r = await fetch(u, {
+      method,
+      headers: { "User-Agent": UA, "X-Requested-With": "XMLHttpRequest", Accept: "application/json, text/javascript, */*", Referer: "https://tumma.in/a2/p33" },
+      body: method === "POST" ? "" : undefined,
+    });
     const t = await r.text();
-    log(`GET ${u} -> ${r.status} ${r.headers.get("content-type")} len=${t.length}`);
+    log(`${method} ${u} -> ${r.status} ${r.headers.get("content-type")} len=${t.length}`);
+    log(t.slice(0, 2500));
     return t;
   } catch (e) {
-    log(`GET ${u} FAILED ${e.message}`);
+    log(`${method} ${u} FAILED ${e.message}`);
     return "";
   }
 }
-for (const page of ["https://tumma.in/m1039", "https://tumma.in/a2/p33"]) {
-  const html = await get(page);
-  log("--- head 3000 ---");
-  log(html.slice(0, 3000));
-  log("--- urls ---");
-  for (const m of new Set(html.match(/https?:\/\/[^"'\s<>)]+/g) ?? [])) log(m);
-  log("--- snippets ---");
-  for (const m of html.matchAll(/.{0,160}(mp3|m4a|\.aac|audio|sound|track|play|m1039|file|media).{0,160}/gi)) log(m[0].replace(/\s+/g, " "));
-  const scripts = [...html.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => new URL(m[1], page).href);
-  for (const s of scripts.slice(0, 12)) {
-    const js = await get(s);
-    for (const m of js.matchAll(/.{0,200}(mp3|m4a|audio|assets\.tumma|\/m\/|media).{0,200}/gi)) log(`[${s.split("/").pop()}] ${m[0].replace(/\s+/g, " ")}`);
-  }
+for (const u of ["https://tumma.in/api/media/linkedPlaylist/33", "https://tumma.in/api/media/linkedPlaylistFromMedia/1039"]) {
+  const t = await call(u, "GET");
+  if (!t.includes("soundUrl")) await call(u, "POST");
 }
-// common guesses
-for (const g of ["https://assets.tumma.in/m/1039.mp3", "https://assets.tumma.in/mp3/1039.mp3", "https://tumma.in/m1039.mp3", "https://tumma.in/api/m1039", "https://tumma.in/m1039.json"]) {
+const page = await (await fetch("https://assets.tumma.in/js/player.js", { headers: { "User-Agent": UA } })).text();
+const i = page.indexOf("linkedPlaylist/");
+log("--- player.js around linkedPlaylist ---");
+log(page.slice(Math.max(0, i - 1500), i + 1500));
+const all = out.join("\n");
+const sound = all.match(/"soundUrl"\s*:\s*"([^"]+)"/);
+if (sound) {
+  const url = sound[1].replace(/\\\//g, "/");
+  log(`--- soundUrl sample ${url}`);
   try {
-    const r = await fetch(g, { method: "GET", headers: { "User-Agent": UA, Range: "bytes=0-100" } });
-    log(`GUESS ${g} -> ${r.status} ${r.headers.get("content-type")}`);
+    const r = await fetch(url, { headers: { "User-Agent": UA, Range: "bytes=0-1000", Origin: "https://mengnattawitmarin.github.io" } });
+    log(`sound -> ${r.status} type=${r.headers.get("content-type")} acao=${r.headers.get("access-control-allow-origin")} range=${r.headers.get("content-range")} len=${r.headers.get("content-length")}`);
   } catch (e) {
-    log(`GUESS ${g} fail ${e.message}`);
+    log(`sound fail ${e.message}`);
   }
 }
-fs.writeFileSync("public/probe-tumma.txt", out.join("\n").slice(0, 900000));
+fs.writeFileSync("public/probe-tumma.txt", out.join("\n").slice(0, 400000));
