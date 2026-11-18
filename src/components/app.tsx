@@ -16,7 +16,6 @@ import { NoticesSheet, useUnreadCount } from "@/components/notices-sheet";
 import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
 import { ClipperView } from "@/components/clipper-view";
 import { StoriesView, CoverImage } from "@/components/stories-view";
-import { EditorView } from "@/components/editor/editor-view";
 import { getEpisode } from "@/lib/stories";
 import { useEpisodeUi } from "@/lib/episode-player";
 import { HomeView } from "@/components/home-view";
@@ -131,7 +130,7 @@ export function App() {
         className="hidden"
       />
 
-      {tab !== "movies" && tab !== "clipper" && tab !== "stories" && tab !== "editor" ? (
+      {tab !== "movies" && tab !== "clipper" && tab !== "stories" ? (
         <header className="safe-top flex items-center justify-between px-4 pb-2">
           <button type="button" onClick={() => useApp.getState().setTab("home")} aria-label="หน้าหลัก">
             <Logo className="text-[26px]" />
@@ -168,13 +167,12 @@ export function App() {
         {tab === "search" ? <SearchView /> : null}
         {tab === "clipper" ? <ClipperView /> : null}
         {tab === "stories" ? <StoriesView /> : null}
-        {tab === "editor" ? <EditorView /> : null}
         {tab === "profile" ? <ProfileView /> : null}
       </main>
 
-      {episode && tab !== "clipper" && tab !== "editor" ? <EpisodeMini item={episode} playing={playing} /> : null}
+      {episode && tab !== "clipper" ? <EpisodeMini item={episode} playing={playing} /> : null}
 
-      {station && tab !== "clipper" && tab !== "editor" ? (
+      {station && tab !== "clipper" ? (
         <div className="mx-3 mb-2 flex h-14 items-center gap-3 rounded-2xl bg-elevated pl-2 pr-1.5 ring-gold">
           <button type="button" onClick={() => useApp.getState().setNowOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
             <StationArt station={station} size="md" className="size-10 rounded-lg" />
@@ -197,7 +195,7 @@ export function App() {
         </div>
       ) : null}
 
-      <nav className={cn("safe-bottom grid grid-cols-5 border-t", tab === "editor" && "hidden", tab === "clipper" ? "border-white/10 bg-black" : "border-line bg-bg/95 backdrop-blur")} aria-label="เมนูหลัก">
+      <nav className={cn("safe-bottom grid grid-cols-5 border-t", tab === "clipper" ? "border-white/10 bg-black" : "border-line bg-bg/95 backdrop-blur")} aria-label="เมนูหลัก">
         {NAV.map(({ id, label, icon: Icon }) => {
           const selected = navTab === id;
           return (

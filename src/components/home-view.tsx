@@ -2,7 +2,7 @@ import { channels, stations, titles, type StudioStation } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp, type TabId } from "@/lib/store";
-import { FilmIcon, HeadphonesIcon, MusicIcon, PlayIcon, RadioIcon, ScissorsIcon, TvIcon } from "@/components/icons";
+import { FilmIcon, HeadphonesIcon, MusicIcon, PlayIcon, RadioIcon, SmileIcon, TvIcon } from "@/components/icons";
 import { RadioHero } from "@/components/radio-hero";
 import { FavoriteRow } from "@/components/radio-view";
 import { StoriesRow } from "@/components/stories-row";
@@ -14,7 +14,7 @@ const CATEGORIES: Array<{ label: string; icon: typeof RadioIcon; tab: TabId; anc
   { label: "ทีวี", icon: TvIcon, tab: "tv" },
   { label: "หนัง", icon: FilmIcon, tab: "movies" },
   { label: "เรื่องเล่า", icon: HeadphonesIcon, tab: "stories" },
-  { label: "ตัดต่อ", icon: ScissorsIcon, tab: "editor" },
+  { label: "บันเทิง", icon: SmileIcon, tab: "movies" },
 ];
 
 export const PLAYLIST_ART: Record<string, [string, string]> = {
