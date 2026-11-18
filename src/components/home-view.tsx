@@ -2,10 +2,11 @@ import { channels, stations, titles, type StudioStation } from "@/lib/catalog";
 import { openChannel, openTitle } from "@/lib/actions";
 import { playStation } from "@/lib/player";
 import { useApp, type TabId } from "@/lib/store";
-import { FilmIcon, HeadphonesIcon, MusicIcon, PlayIcon, RadioIcon, SmileIcon, TvIcon } from "@/components/icons";
+import { FilmIcon, HeadphonesIcon, LotusIcon, MusicIcon, PlayIcon, RadioIcon, TvIcon } from "@/components/icons";
 import { RadioHero } from "@/components/radio-hero";
 import { FavoriteRow } from "@/components/radio-view";
 import { StoriesRow } from "@/components/stories-row";
+import { DharmaRow } from "@/components/dharma-row";
 import { Poster, SectionHeader } from "@/components/ui";
 import { ChannelArt } from "@/components/art";
 
@@ -14,7 +15,7 @@ const CATEGORIES: Array<{ label: string; icon: typeof RadioIcon; tab: TabId; anc
   { label: "ทีวี", icon: TvIcon, tab: "tv" },
   { label: "หนัง", icon: FilmIcon, tab: "movies" },
   { label: "เรื่องเล่า", icon: HeadphonesIcon, tab: "stories" },
-  { label: "บันเทิง", icon: SmileIcon, tab: "movies" },
+  { label: "ธรรมะ", icon: LotusIcon, tab: "dharma" },
 ];
 
 export const PLAYLIST_ART: Record<string, [string, string]> = {
@@ -74,6 +75,7 @@ export function HomeView() {
       </div>
       {favStations.length > 0 ? <FavoriteRow list={favStations} /> : null}
       <StoriesRow />
+      <DharmaRow />
 
       <section className="mt-7">
         <SectionHeader title="กำลังฮิต" onAction={() => setTab("movies")} />

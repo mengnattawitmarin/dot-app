@@ -29,8 +29,8 @@ export const TEACHERS = [
     full: "พระราชพรหมยาน (หลวงพ่อฤาษีลิงดำ)",
     place: "วัดจันทาราม (ท่าซุง) อุทัยธานี",
     blurb: "กรรมฐาน ๔๐ มโนมยิทธิ พระโสดาบัน คำสอนตอนเช้า-เย็น และเรื่องเล่าจากวัดท่าซุง",
-    terms: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤาษีลิงดํา", "พระราชพรหมยาน", "หลวงพ่อพระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "วีระ ถาวโร", "ruesi ling dam", "ratchaphromyan", "watthasung", "wat tha sung"],
-    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "\"ruesi\"", "thasung", "watthasung", "ratchaphromyan"],
+    terms: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤาษีลิงดํา", "ฤษีลิงดำ", "พระราชพรหมญาณ", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "lingdam", "พระราชพรหมยาน", "หลวงพ่อพระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "วีระ ถาวโร", "ruesi ling dam", "ratchaphromyan", "watthasung", "wat tha sung"],
+    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\""],
     pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง"],
     max: 160,
   },
@@ -63,6 +63,7 @@ export const TEACHERS = [
     place: "สวนโมกขพลาราม สุราษฎร์ธานี",
     blurb: "ธรรมบรรยายสวนโมกข์ ตัวกู-ของกู จิตว่าง อานาปานสติ และธรรมะกับการเมือง",
     terms: ["พุทธทาส", "สวนโมกข", "buddhadasa", "suan mokkh", "suanmokkh"],
+    exclude: ["a.d.m", "a. d. m", "daham", "abhidhamma", "abhdhamma", "nirwana", "dhammavidu"],
     search: ["พุทธทาส", "สวนโมกข์", "buddhadasa", "suanmokkh"],
     pods: ["พุทธทาส", "ท่านพุทธทาส", "สวนโมกข์"],
     max: 80,
@@ -240,8 +241,19 @@ async function pool(items, n, fn) {
   return out;
 }
 
+/** TIS-620 bytes that were read as Latin-1 ("ªÕÇÔµ") → Thai. */
+export function fixThai(s) {
+  if (!/[\u00a1-\u00fb]{2,}/.test(s) || /[\u0e00-\u0e7f]/.test(s)) return s;
+  return s.replace(/[\u00a1-\u00fb]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xa0 + 0x0e00));
+}
+
+/** Text that is neither Thai nor plain English (garbled, Vietnamese, French, Sinhala…). */
+export function foreign(s) {
+  return /[\u00a0-\u024f\u0370-\u0dff\u0e80-\u1fff]/.test(s.replace(/[\u00a0\u00b7\u00d7]/g, ""));
+}
+
 export function clean(s, max = 140) {
-  const text = String(s ?? "")
+  const text = fixThai(String(s ?? ""))
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/g, " ")
     .replace(/&amp;/g, "&")
@@ -249,6 +261,7 @@ export function clean(s, max = 140) {
     .replace(/&#39;/g, "'")
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
+    .replace(/\uFFFD/g, "")
     .replace(/\s+/g, " ")
     .trim();
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
@@ -278,8 +291,9 @@ export function trackTitle(file) {
   const base = decodeURIComponent(file.name.split("/").pop() ?? file.name).replace(/\.[a-z0-9]{2,4}$/i, "");
   const fromName = clean(base.replace(/[_]+/g, " ").replace(/\s*-\s*$/, "").replace(/\s{2,}/g, " "), 120);
   // Prefer the embedded title when it's real text, not just the file name again or a number.
-  if (meta && !/^(track\s*)?\d+$/i.test(meta) && meta.length > 2) return meta;
-  const name = fromName || meta || "ไม่มีชื่อ";
+  if (meta && !/^(track\s*)?\d+$/i.test(meta) && meta.length > 2 && !foreign(meta)) return meta;
+  const name = (!foreign(fromName) && fromName) || (!foreign(meta) && meta) || "";
+  if (!name) return "";
   return /^\d{1,3}$/.test(arabic(name)) ? `ตอนที่ ${Number(arabic(name))}` : name;
 }
 
@@ -298,10 +312,35 @@ export function yearOf(...texts) {
     const ce = s.match(/\b(19[5-9]\d|20[0-2]\d)\b/);
     if (ce) return Number(ce[1]) + 543;
   }
+  // Talks are often named by BE date: 540110, PS590227am…
+  for (const raw of texts) {
+    const m = arabic(String(raw ?? "")).match(/(?:^|\D)([3-6]\d)(0[1-9]|1[0-2])([0-3]\d)(?!\d)/);
+    if (m) return 2500 + Number(m[1]);
+  }
   return undefined;
 }
 
 const AUDIO = /\.(mp3|m4a)$/i;
+
+/** Topic for an album: from its title first, else what most of its talks are about. */
+export function albumTopic(title, trackTitles) {
+  const own = topicOf(title);
+  if (own !== "talk") return own;
+  const votes = {};
+  for (const t of trackTitles) {
+    const k = topicOf(t);
+    if (k !== "talk") votes[k] = (votes[k] ?? 0) + 1;
+  }
+  const best = Object.entries(votes).sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] >= Math.max(2, trackTitles.length * 0.35) ? best[0] : "talk";
+}
+
+/** "คำสอน… ชุดที่ 04/13" → { group: "คำสอน…", part: "ชุดที่ 04/13" } */
+export function splitSeries(title) {
+  const m = title.match(/^(.{6,}?)[\s\-–:|]*((?:ชุดที่|ชุด|แผ่นที่|แผ่น|ภาคที่|ภาค|เล่มที่|เล่ม|ม้วนที่|ตอนที่|cd|disc|part|vol\.?)\s*[\d๐-๙]+.*)$/i);
+  if (!m) return null;
+  return { group: m[1].trim(), part: m[2].trim() };
+}
 
 /**
  * Turns an archive.org metadata record into albums: one per folder inside the item (that's how
@@ -330,32 +369,34 @@ export function albumsFromItem(meta, teacher) {
   }
   const base = `https://archive.org/download/${encodeURIComponent(id)}/`;
   const link = `https://archive.org/details/${encodeURIComponent(id)}`;
-  const desc = clean(joined(md.description), 600);
+  const desc = clean(joined(md.description), 300);
   const albums = [];
   const dirs = [...groups.keys()].sort(naturalCompare);
   for (const dir of dirs) {
     const list = groups.get(dir).sort((a, b) => naturalCompare(a.name, b.name)).slice(0, 400);
     const folder = dir ? clean(dir.split("/").pop().replace(/_/g, " "), 90) : "";
-    const title = dirs.length > 1 && folder ? `${folder}` : itemTitle;
-    const tracks = list.map((f) => ({
-      t: trackTitle(f),
-      u: f.name.split("/").map(encodeURIComponent).join("/"),
-      d: toSeconds(f.length),
-    }));
-    const allText = `${itemTitle} ${folder} ${joined(md.subject)} ${tracks.map((x) => x.t).join(" ")}`;
+    const useFolder = dirs.length > 1 && folder && !foreign(folder);
+    const tracks = list.map((f, i) => ({ t: trackTitle(f) || `ตอนที่ ${i + 1}`, u: f.name, d: toSeconds(f.length) }));
+    let title = useFolder ? folder : itemTitle;
+    let group = useFolder ? itemTitle : undefined;
+    if (!group) {
+      const series = splitSeries(title);
+      if (series) [group, title] = [series.group, series.part];
+    }
     albums.push({
       id: `ia-${hash(`${id}/${dir}`)}`,
       title,
-      group: dirs.length > 1 ? itemTitle : undefined,
-      topic: topicOf(`${title} ${folder}`) !== "talk" ? topicOf(`${title} ${folder}`) : topicOf(allText),
+      group,
+      topic: albumTopic(`${group ?? ""} ${title}`, tracks.map((x) => x.t)),
       src: "archive",
       link,
       base,
-      year: yearOf(folder, itemTitle, first(md.date)),
+      year: yearOf(folder, itemTitle, first(md.date), tracks[0]?.t),
       desc: desc || undefined,
       n: tracks.length,
       dur: tracks.reduce((s, x) => s + x.d, 0),
       tracks,
+      _item: itemTitle,
       _teacher: teacher.id,
       _pop: Number(md.downloads ?? 0),
     });
@@ -369,17 +410,24 @@ export function mentions(teacher, text) {
   return teacher.terms.some((term) => t.includes(term.toLowerCase()));
 }
 
-/** Teachers other than `teacher` whose names appear more prominently — used to avoid misfiling. */
-function belongsElsewhere(teacher, title) {
-  const t = title.toLowerCase();
-  if (mentions(teacher, t)) return false;
-  return TEACHERS.some((o) => o.id !== teacher.id && mentions(o, t));
+const PERSON = /(ajahn|ajaan|ajarn|achaan|acharn|luang ?p[ou]r?|luangpor|bhikkhu|venerable|ven\.|talks? by|หลวงพ่อ|หลวงปู่|หลวงตา|พระอาจารย์|พระอ\.|อาจารย์|อ\.|ครูบา|ท่านพ่อ|ท่านอาจารย์|พระมหา)\s*\S+/i;
+
+/** Is this item about our teacher (and not about someone else, or in another language)? */
+export function relevant(teacher, doc) {
+  const title = clean(joined(doc.title), 200);
+  if (!title || foreign(title)) return false;
+  const lower = `${title} ${joined(doc.subject)} ${joined(doc.creator)} ${joined(doc.description).slice(0, 600)}`.toLowerCase();
+  if ((teacher.exclude ?? []).some((x) => lower.includes(x))) return false;
+  if (mentions(teacher, title)) return true;
+  // Someone else is named in the title → it's theirs.
+  if (PERSON.test(title) || TEACHERS.some((o) => o.id !== teacher.id && mentions(o, title))) return false;
+  return mentions(teacher, `${joined(doc.subject)} ${joined(doc.creator)}`);
 }
 
 async function archiveSearch(term) {
   const q = `(${term}) AND mediatype:(audio OR etree)`;
   const fl = ["identifier", "title", "description", "subject", "creator", "downloads", "item_size"].map((f) => `fl[]=${f}`).join("&");
-  const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(q)}&${fl}&rows=300&page=1&output=json&sort[]=downloads+desc`;
+  const url = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(q)}&${fl}&rows=400&page=1&output=json&sort[]=downloads+desc`;
   try {
     const data = await get(url, { json: true });
     return data?.response?.docs ?? [];
@@ -399,24 +447,85 @@ async function itunesSearch(term) {
   }
 }
 
+/** Key for grouping single-talk items that belong together ("ภาษาคน ภาษาธรรม ตอนที่ 3"). */
+function seriesKey(teacher, title) {
+  let t = title.toLowerCase();
+  for (const term of teacher.terms) t = t.split(term.toLowerCase()).join(" ");
+  return t
+    .replace(/ตอนที่|ตอน|ภาคพิเศษ|ภาค|ภิกขุ|ภิกษุ|อ\.|หลวงพ่อ|ท่าน|ep\.?|part/g, " ")
+    .replace(/[\d๐-๙]+/g, " ")
+    .replace(/[^\p{L}\p{M}]+/gu, " ")
+    .trim();
+}
+
+/**
+ * Many uploaders put one talk per archive item. Gather those: items whose titles differ only by
+ * a number become one album; the rest go into a single "เทศน์เดี่ยว" album, titled per talk.
+ */
+export function consolidate(teacher, albums) {
+  const small = albums.filter((a) => a.src === "archive" && a.n <= 2 && !a.group);
+  const rest = albums.filter((a) => !small.includes(a));
+  const byKey = new Map();
+  for (const a of small) {
+    const key = seriesKey(teacher, a.title);
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(a);
+  }
+  const loose = [];
+  const absolute = (a, t) => ({ ...t, u: a.base + t.u.split("/").map(encodeURIComponent).join("/") });
+  for (const [key, list] of byKey) {
+    if (list.length < 3 || key.length < 3) {
+      loose.push(...list);
+      continue;
+    }
+    list.sort((a, b) => naturalCompare(a.title, b.title));
+    const named = /[฀-๿]/.test(key) || key.split(" ").length > 1;
+    const tracks = list.flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${a.title} (${i + 1})` : a.title })));
+    rest.push({
+      ...list[0],
+      id: `ia-s-${hash(list.map((a) => a.id).join())}`,
+      title: named ? clean(list[0].title.replace(/(ตอนที่|ตอน)?\s*[\d๐-๙]+.*$/, ""), 90) || list[0].title : `ไฟล์ชุด ${key}`,
+      group: undefined,
+      base: "",
+      link: list[0].link,
+      n: tracks.length,
+      dur: tracks.reduce((s, t) => s + t.d, 0),
+      topic: albumTopic(list[0].title, tracks.map((t) => t.t)),
+      tracks,
+      _pop: Math.max(...list.map((a) => a._pop)),
+    });
+  }
+  if (loose.length) {
+    loose.sort((a, b) => b._pop - a._pop);
+    const tracks = loose.slice(0, 300).flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${a.title} (${i + 1})` : a.title })));
+    rest.push({
+      id: `ia-loose-${teacher.id}`,
+      title: "รวมเทศน์เดี่ยว (กัณฑ์ละตอน)",
+      topic: "talk",
+      src: "archive",
+      link: "https://archive.org/",
+      base: "",
+      desc: `เทศน์ทีละกัณฑ์ของ${teacher.name} จากผู้เผยแพร่หลายราย บน archive.org`,
+      n: tracks.length,
+      dur: tracks.reduce((s, t) => s + t.d, 0),
+      tracks,
+      _pop: 2e5,
+    });
+  }
+  return rest;
+}
+
 async function collectArchive(teacher, claimed) {
   const docs = new Map();
   for (const term of teacher.search) {
     for (const d of await archiveSearch(term)) if (!docs.has(d.identifier)) docs.set(d.identifier, d);
     await sleep(300);
   }
-  const relevant = [...docs.values()].filter((d) => {
-    if (claimed.has(d.identifier)) return false;
-    const head = `${joined(d.title)} ${joined(d.subject)} ${joined(d.creator)}`;
-    const text = `${head} ${joined(d.description).slice(0, 2000)}`;
-    if (!mentions(teacher, text)) return false;
-    if (belongsElsewhere(teacher, joined(d.title))) return false;
-    return Number(d.item_size ?? 0) < 60e9;
-  });
-  relevant.sort((a, b) => Number(b.downloads ?? 0) - Number(a.downloads ?? 0));
-  const picked = relevant.slice(0, teacher.max * 2);
+  const keep = [...docs.values()].filter((d) => !claimed.has(d.identifier) && relevant(teacher, d) && Number(d.item_size ?? 0) < 60e9);
+  keep.sort((a, b) => Number(b.downloads ?? 0) - Number(a.downloads ?? 0));
+  const picked = keep.slice(0, teacher.max * 3);
   for (const d of picked) claimed.add(d.identifier);
-  console.log(`  archive: ${docs.size} hits, ${relevant.length} relevant, reading ${picked.length}`);
+  console.log(`  archive: ${docs.size} hits, ${keep.length} relevant, reading ${picked.length}`);
   const metas = await pool(picked, 6, (d) => get(`https://archive.org/metadata/${encodeURIComponent(d.identifier)}`, { json: true }));
   const albums = [];
   metas.forEach((m, i) => {
@@ -424,7 +533,7 @@ async function collectArchive(teacher, claimed) {
     if (m.metadata && picked[i].downloads) m.metadata.downloads = picked[i].downloads;
     albums.push(...albumsFromItem(m, teacher));
   });
-  return albums;
+  return consolidate(teacher, albums);
 }
 
 async function collectPodcasts(teacher, claimed) {
@@ -432,8 +541,7 @@ async function collectPodcasts(teacher, claimed) {
   for (const term of teacher.pods) {
     for (const r of await itunesSearch(term)) {
       if (!r.feedUrl || found.has(r.collectionId) || claimed.has(`pod:${r.collectionId}`)) continue;
-      const head = `${r.collectionName ?? ""} ${r.artistName ?? ""}`;
-      if (!mentions(teacher, head) || belongsElsewhere(teacher, r.collectionName ?? "")) continue;
+      if (!relevant(teacher, { title: r.collectionName ?? "", creator: r.artistName ?? "" })) continue;
       found.set(r.collectionId, r);
     }
     await sleep(300);
@@ -516,13 +624,11 @@ async function collectLuangtaEu() {
 function dedupe(albums) {
   const seen = new Set();
   return albums.filter((a) => {
-    const sig = a.tracks
-      .slice(0, 6)
-      .map((t) => `${t.t}|${Math.round(t.d / 30)}`)
-      .join(";");
-    const key = `${a.n}:${sig}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
+    const sig = `${a.n}:${a.tracks.slice(0, 8).map((t) => t.t.toLowerCase().replace(/\s+/g, "")).join(";")}`;
+    const name = `${a.n}:${`${a.group ?? ""}${a.title}`.toLowerCase().replace(/[.\-_ ]?\d{2,3}k$/, "").replace(/\s+/g, "")}`;
+    if (seen.has(sig) || seen.has(name)) return false;
+    seen.add(sig);
+    seen.add(name);
     return true;
   });
 }
@@ -539,14 +645,21 @@ async function main() {
       ...extra.filter((a) => a._teacher === teacher.id),
     ].filter((a) => a.n > 0);
     const kept = dedupe(albums.sort((a, b) => b._pop - a._pop)).slice(0, teacher.max);
-    // Order inside a teacher: topic order, then by year (old → new), then title.
+    // Order inside a teacher: topic, then series/title (parts stay together), then year.
     const order = Object.fromEntries(TOPICS.map((t, i) => [t.id, i]));
-    kept.sort((a, b) => order[a.topic] - order[b.topic] || (a.year ?? 9999) - (b.year ?? 9999) || naturalCompare(a.title, b.title));
+    kept.sort(
+      (a, b) =>
+        order[a.topic] - order[b.topic] ||
+        naturalCompare(a.group ?? a.title, b.group ?? b.title) ||
+        (a.year ?? 9999) - (b.year ?? 9999) ||
+        naturalCompare(a.title, b.title),
+    );
     const tracks = kept.reduce((s, a) => s + a.n, 0);
     console.log(`  → ${kept.length} albums, ${tracks} tracks`);
     if (!kept.length) continue;
     const { terms, search, pods, max, ...info } = teacher;
-    out.teachers.push({ ...info, albums: kept.map(({ _teacher, _pop, ...a }) => a) });
+    const { exclude, ...pub } = info;
+    out.teachers.push({ ...pub, albums: kept.map(({ _teacher, _pop, _item, ...a }) => a) });
   }
   const total = out.teachers.reduce((s, t) => s + t.albums.reduce((n, a) => n + a.n, 0), 0);
   console.log(`Total: ${out.teachers.length} teachers, ${total} tracks`);

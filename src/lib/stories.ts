@@ -46,16 +46,42 @@ const PROGRESS_KEY = "dot-ep-progress-v1";
 const native = Capacitor.isNativePlatform();
 
 const episodeIndex = new Map<string, { show: Show; episode: Episode }>();
+const extraIndex = new Map<string, { show: Show; episode: Episode }>();
+const extraShows = new Map<string, Show[]>();
+const extraById = new Map<string, Show>();
 
 function index(shows: Show[]) {
   episodeIndex.clear();
   for (const show of shows) for (const episode of show.episodes) episodeIndex.set(`${show.id}:${episode.id}`, { show, episode });
 }
 
+/** Other modes (ธรรมะ) register their albums here so the shared episode player can play them. */
+export function registerShows(source: string, shows: Show[]) {
+  extraShows.set(source, shows);
+  extraIndex.clear();
+  extraById.clear();
+  for (const list of extraShows.values())
+    for (const show of list) {
+      extraById.set(show.id, show);
+      for (const episode of show.episodes) extraIndex.set(`${show.id}:${episode.id}`, { show, episode });
+    }
+  // Re-render "ฟังต่อ" lists that may reference these.
+  useStories.setState({ progress: { ...useStories.getState().progress } });
+}
+
 /** Episode keys are "<showId>:<episodeId>" — episode ids are only unique within a show. */
 export const episodeKey = (show: Show, episode: Episode) => `${show.id}:${episode.id}`;
-export const getEpisode = (key: string) => episodeIndex.get(key);
-export const getShow = (id: string) => useStories.getState().shows.find((s) => s.id === id);
+export const getEpisode = (key: string) => episodeIndex.get(key) ?? extraIndex.get(key);
+export const getShow = (id: string) => useStories.getState().shows.find((s) => s.id === id) ?? extraById.get(id);
+
+/** The episode after `key` in the same show's list order, if any. */
+export function nextEpisodeKey(key: string) {
+  const item = getEpisode(key);
+  if (!item) return null;
+  const i = item.show.episodes.findIndex((e) => e.id === item.episode.id);
+  const next = item.show.episodes[i + 1];
+  return next ? `${item.show.id}:${next.id}` : null;
+}
 
 function apply(data: { categories?: StoryCategory[]; shows?: Show[] }) {
   const shows = (data.shows ?? []).map((s) => ({

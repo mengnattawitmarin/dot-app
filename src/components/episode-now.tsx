@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { getEpisode, formatClock } from "@/lib/stories";
-import { cycleRate, seekEpisode, skipEpisode, toggleEpisode, useEpisodeUi } from "@/lib/episode-player";
+import { getEpisode, formatClock, nextEpisodeKey } from "@/lib/stories";
+import { isDharmaShow, openAlbumLater } from "@/lib/dharma";
+import { cycleRate, playEpisode, seekEpisode, skipEpisode, toggleEpisode, useEpisodeUi } from "@/lib/episode-player";
 import { openExternal, shareContent } from "@/lib/share";
 import { useApp } from "@/lib/store";
-import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, ShareIcon } from "@/components/icons";
-import { CoverImage } from "@/components/stories-view";
+import { ChevronDown, HeartIcon, PauseIcon, PlayIcon, ShareIcon, SkipBack, SkipForward } from "@/components/icons";
+import { EpisodeCover } from "@/components/dharma-view";
 
 const SLEEP = [15, 30, 60];
 
@@ -35,6 +36,10 @@ export function EpisodeNow({ episodeKey }: { episodeKey: string }) {
   const saved = favorites.includes(show.id);
   const shown = drag ?? position;
   const total = duration || episode.duration;
+  const dharma = isDharmaShow(show.id);
+  const index = show.episodes.findIndex((e) => e.id === episode.id);
+  const prevKey = index > 0 ? `${show.id}:${show.episodes[index - 1]!.id}` : null;
+  const nextKey = nextEpisodeKey(episodeKey);
 
   return (
     <div className="safe-top safe-bottom absolute inset-0 z-30 flex flex-col overflow-y-auto bg-bg px-5 pb-6">
@@ -43,7 +48,7 @@ export function EpisodeNow({ episodeKey }: { episodeKey: string }) {
         <button type="button" onClick={() => useApp.getState().setNowOpen(false)} className="grid size-11 place-items-center" aria-label="ปิด">
           <ChevronDown size={26} />
         </button>
-        <p className="text-xs tracking-[0.2em] text-gold-light">Do.T เรื่องเล่า</p>
+        <p className="text-xs tracking-[0.2em] text-gold-light">{dharma ? "Do.T ธรรมะ" : "Do.T เรื่องเล่า"}</p>
         <button
           type="button"
           aria-label={saved ? "เลิกติดตามรายการ" : "ติดตามรายการ"}
@@ -56,12 +61,17 @@ export function EpisodeNow({ episodeKey }: { episodeKey: string }) {
       </div>
 
       <div className="relative mt-4 flex flex-col items-center">
-        <CoverImage src={episode.image || show.image} name={show.name} className="size-60 rounded-3xl shadow-[0_20px_60px_-15px_rgba(214,168,86,0.45)]" />
+        <EpisodeCover show={show} image={episode.image} className="size-60 rounded-3xl shadow-[0_20px_60px_-15px_rgba(214,168,86,0.45)]" />
         <h2 className="mt-6 line-clamp-2 text-center text-xl font-semibold leading-snug">{episode.title}</h2>
         <button
           type="button"
           onClick={() => {
             useApp.getState().setNowOpen(false);
+            if (dharma) {
+              openAlbumLater(show.id);
+              useApp.getState().setTab("dharma");
+              return;
+            }
             useApp.getState().setTab("stories");
             window.dispatchEvent(new CustomEvent("dot:open-show", { detail: show.id }));
           }}
@@ -102,7 +112,12 @@ export function EpisodeNow({ episodeKey }: { episodeKey: string }) {
         </div>
       </div>
 
-      <div className="relative mt-4 flex items-center justify-center gap-7">
+      <div className="relative mt-4 flex items-center justify-center gap-5">
+        {dharma ? (
+          <button type="button" disabled={!prevKey} onClick={() => prevKey && void playEpisode(prevKey)} aria-label="ตอนก่อนหน้า" className="grid size-10 place-items-center text-gold-light disabled:opacity-30">
+            <SkipBack size={22} />
+          </button>
+        ) : null}
         <button type="button" onClick={() => skipEpisode(-15)} aria-label="ย้อน 15 วินาที" className="grid size-14 place-items-center rounded-full text-gold-light">
           <span className="text-lg font-semibold">↺15</span>
         </button>
@@ -117,6 +132,11 @@ export function EpisodeNow({ episodeKey }: { episodeKey: string }) {
         <button type="button" onClick={() => skipEpisode(30)} aria-label="ข้ามไป 30 วินาที" className="grid size-14 place-items-center rounded-full text-gold-light">
           <span className="text-lg font-semibold">30↻</span>
         </button>
+        {dharma ? (
+          <button type="button" disabled={!nextKey} onClick={() => nextKey && void playEpisode(nextKey)} aria-label="ตอนถัดไป" className="grid size-10 place-items-center text-gold-light disabled:opacity-30">
+            <SkipForward size={22} />
+          </button>
+        ) : null}
       </div>
 
       <div className="relative mt-6 flex items-center justify-between gap-2">

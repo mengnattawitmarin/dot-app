@@ -53,7 +53,7 @@ export function StoriesView() {
     return () => window.removeEventListener("dot:open-show", onOpen);
   }, []);
 
-  const resume = useMemo(() => continueListening(progress), [progress, shows]);
+  const resume = useMemo(() => continueListening(progress).filter((x) => !x.item.show.id.startsWith("dh-")), [progress, shows]);
   const following = shows.filter((s) => favorites.includes(s.id));
   const visible = cat === "all" ? shows : shows.filter((s) => s.category === cat);
   const show = openShow ? getShow(openShow) : undefined;

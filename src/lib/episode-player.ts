@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { getEpisode, saveProgress, useStories } from "@/lib/stories";
+import { getEpisode, nextEpisodeKey, saveProgress, useStories } from "@/lib/stories";
 import { stopForOtherOutput } from "@/lib/player";
 import { useApp } from "@/lib/store";
 
@@ -40,6 +40,12 @@ function element() {
   });
   audio.addEventListener("ended", () => {
     if (currentKey) saveProgress(currentKey, audio!.duration || 0, audio!.duration || 0);
+    // Dharma albums are series (วาระ/ชุด): carry on with the next talk.
+    const next = currentKey && currentKey.startsWith("dh-") && isEpisodeActive() ? nextEpisodeKey(currentKey) : null;
+    if (next) {
+      void playEpisode(next);
+      return;
+    }
     if (isEpisodeActive()) useApp.getState().setPlaying(false);
   });
   audio.addEventListener("error", () => {

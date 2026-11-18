@@ -43,7 +43,7 @@ export function setupMediaSession() {
         const img = item.episode.image || item.show.image;
         ms.metadata = new MediaMetadata({
           title: item.episode.title,
-          artist: item.show.name,
+          artist: item.show.id.startsWith("dh-") ? `${item.show.author} · ${item.show.name}` : item.show.name,
           album: "Do.T เรื่องเล่า",
           artwork: img ? [{ src: img, sizes: "600x600" }] : artwork,
         });

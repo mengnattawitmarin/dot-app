@@ -11,7 +11,7 @@ export function StoriesRow() {
   useEffect(() => {
     void loadStories();
   }, []);
-  const resume = useMemo(() => continueListening(progress), [progress, shows]);
+  const resume = useMemo(() => continueListening(progress).filter((x) => !x.item.show.id.startsWith("dh-")), [progress, shows]);
   if (shows.length === 0) return null;
   const openShow = (id: string) => {
     useApp.getState().setTab("stories");

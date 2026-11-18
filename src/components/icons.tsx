@@ -272,3 +272,12 @@ export const HeadphonesIcon = (p: IconProps) => (
     <rect x="16" y="13.5" width="4.5" height="7" rx="1.6" />
   </svg>
 );
+
+export const LotusIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 4.5c1.9 2 2.9 4.3 2.9 6.8 0 2.6-1.1 4.9-2.9 6.7-1.8-1.8-2.9-4.1-2.9-6.7 0-2.5 1-4.8 2.9-6.8z" />
+    <path d="M9.4 9.2C7.2 8.6 5.2 8.8 3.5 9.6c.4 4.6 3.6 8 8.5 8.4" />
+    <path d="M14.6 9.2c2.2-.6 4.2-.4 5.9.4-.4 4.6-3.6 8-8.5 8.4" />
+    <path d="M4 20.2h16" />
+  </svg>
+);

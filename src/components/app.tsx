@@ -15,7 +15,8 @@ import { SignInSheet } from "@/components/account";
 import { NoticesSheet, useUnreadCount } from "@/components/notices-sheet";
 import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIcon, TvIcon, UserIcon } from "@/components/icons";
 import { ClipperView } from "@/components/clipper-view";
-import { StoriesView, CoverImage } from "@/components/stories-view";
+import { StoriesView } from "@/components/stories-view";
+import { DharmaView, EpisodeCover } from "@/components/dharma-view";
 import { getEpisode } from "@/lib/stories";
 import { useEpisodeUi } from "@/lib/episode-player";
 import { HomeView } from "@/components/home-view";
@@ -119,7 +120,7 @@ export function App() {
   }, [sleepEndsAt]);
 
   const banner = !hydrated ? null : !online ? "ไม่มีอินเทอร์เน็ต — สตูดิโอในเครื่องยังเล่นได้" : forced ? "โหมดในเครื่อง — ช่องสดถูกพักไว้" : null;
-  const navTab: TabId = tab === "movies" ? "home" : tab;
+  const navTab: TabId = tab === "movies" || tab === "dharma" || tab === "stories" ? "home" : tab;
 
   return (
     <div className="relative mx-auto flex h-dvh max-w-lg flex-col overflow-hidden bg-bg text-fg">
@@ -130,7 +131,7 @@ export function App() {
         className="hidden"
       />
 
-      {tab !== "movies" && tab !== "clipper" && tab !== "stories" ? (
+      {tab !== "movies" && tab !== "clipper" && tab !== "stories" && tab !== "dharma" ? (
         <header className="safe-top flex items-center justify-between px-4 pb-2">
           <button type="button" onClick={() => useApp.getState().setTab("home")} aria-label="หน้าหลัก">
             <Logo className="text-[26px]" />
@@ -154,7 +155,7 @@ export function App() {
             </button>
           </div>
         </header>
-      ) : tab === "movies" || tab === "stories" ? (
+      ) : tab === "movies" || tab === "stories" || tab === "dharma" ? (
         <div className="safe-top" />
       ) : null}
       {banner ? <p className="mx-4 mb-2 rounded-lg bg-subtle px-3 py-1.5 text-center text-xs text-muted">{banner}</p> : null}
@@ -167,6 +168,7 @@ export function App() {
         {tab === "search" ? <SearchView /> : null}
         {tab === "clipper" ? <ClipperView /> : null}
         {tab === "stories" ? <StoriesView /> : null}
+        {tab === "dharma" ? <DharmaView /> : null}
         {tab === "profile" ? <ProfileView /> : null}
       </main>
 
@@ -275,7 +277,7 @@ function EpisodeMini({ item, playing }: { item: NonNullable<ReturnType<typeof ge
     <div className="relative mx-3 mb-2 overflow-hidden rounded-2xl bg-elevated ring-gold">
       <div className="flex h-14 items-center gap-3 pl-2 pr-1.5">
         <button type="button" onClick={() => useApp.getState().setNowOpen(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-          <CoverImage src={item.episode.image || item.show.image} name={item.show.name} className="size-10 rounded-lg" />
+          <EpisodeCover show={item.show} image={item.episode.image} className="size-10 rounded-lg" />
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-medium">{item.episode.title}</span>
             <span className="block truncate text-xs text-muted">{item.show.name}</span>

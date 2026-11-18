@@ -137,7 +137,7 @@ export function setupNowPlaying() {
       lastPlaying = playing;
       void NowPlaying.update({
         title: item.episode.title,
-        artist: item.show.name,
+        artist: item.show.id.startsWith("dh-") ? `${item.show.author} · ${item.show.name}` : item.show.name,
         playing,
         artworkUrl: changed ? item.episode.image || item.show.image : undefined,
       }).catch(() => {
