@@ -254,6 +254,16 @@ export function foreign(s) {
   return /[\u00a0-\u024f\u0370-\u0dff\u0e80-\u1fff]/.test(s.replace(/[\u00a0\u00b7\u00d7]/g, ""));
 }
 
+const OTHER_LANG = /\b(cua|nhung|loi|gioi|thieu|phap|thien|ngai|duong|giai|thoat|voi|trong|tinh|lang|huong|suoi|nguon|chi la|coi|audiolivre|il n'y|pas d|la pratique|notre|demeure|l'équilibre|méditation|trouver|enseignement)\b/gi;
+
+/** Album that's in Vietnamese / French etc. written without Thai script. */
+export function otherLanguage(title, trackTitles = []) {
+  const text = [title, ...trackTitles.slice(0, 6)].join(" ");
+  if (/[\u0e00-\u0e7f]/.test(text)) return false;
+  if (foreign(text)) return true;
+  return (text.match(OTHER_LANG) ?? []).length >= 2;
+}
+
 export function clean(s, max = 140) {
   const text = fixThai(String(s ?? ""))
     .replace(/<[^>]+>/g, " ")
@@ -385,6 +395,7 @@ export function albumsFromItem(meta, teacher) {
       const series = splitSeries(title);
       if (series) [group, title] = [series.group, series.part];
     }
+    if (otherLanguage(`${group ?? ""} ${title}`, tracks.map((x) => x.t))) continue;
     albums.push({
       id: `ia-${hash(`${id}/${dir}`)}`,
       title,
@@ -467,11 +478,12 @@ function seriesKey(teacher, title) {
  * a number become one album; the rest go into a single "เทศน์เดี่ยว" album, titled per talk.
  */
 export function consolidate(teacher, albums) {
-  const small = albums.filter((a) => a.src === "archive" && a.n <= 2 && !a.group);
+  const small = albums.filter((a) => a.src === "archive" && a.n <= 2);
+  const full = (a) => `${a.group ?? ""} ${a.title}`.trim();
   const rest = albums.filter((a) => !small.includes(a));
   const byKey = new Map();
   for (const a of small) {
-    const key = seriesKey(teacher, a.title);
+    const key = seriesKey(teacher, full(a));
     if (!byKey.has(key)) byKey.set(key, []);
     byKey.get(key).push(a);
   }
@@ -482,26 +494,26 @@ export function consolidate(teacher, albums) {
       loose.push(...list);
       continue;
     }
-    list.sort((a, b) => naturalCompare(a.title, b.title));
+    list.sort((a, b) => naturalCompare(full(a), full(b)));
     const named = /[฀-๿]/.test(key) || key.split(" ").length > 1;
-    const tracks = list.flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${a.title} (${i + 1})` : a.title })));
+    const tracks = list.flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${full(a)} (${i + 1})` : full(a) })));
     rest.push({
       ...list[0],
       id: `ia-s-${hash(list.map((a) => a.id).join())}`,
-      title: named ? clean(list[0].title.replace(/(ตอนที่|ตอน)?\s*[\d๐-๙]+.*$/, ""), 90) || list[0].title : `ไฟล์ชุด ${key}`,
+      title: list[0].group || (named ? clean(list[0].title.replace(/(ตอนที่|ตอน)?\s*[\d๐-๙]+.*$/, ""), 90) || list[0].title : `ไฟล์ชุด ${key}`),
       group: undefined,
       base: "",
       link: list[0].link,
       n: tracks.length,
       dur: tracks.reduce((s, t) => s + t.d, 0),
-      topic: albumTopic(list[0].title, tracks.map((t) => t.t)),
+      topic: albumTopic(list[0].group ?? list[0].title, tracks.map((t) => t.t)),
       tracks,
       _pop: Math.max(...list.map((a) => a._pop)),
     });
   }
   if (loose.length) {
     loose.sort((a, b) => b._pop - a._pop);
-    const tracks = loose.slice(0, 300).flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${a.title} (${i + 1})` : a.title })));
+    const tracks = loose.slice(0, 300).flatMap((a) => a.tracks.map((t, i) => absolute(a, { ...t, t: a.n > 1 ? `${full(a)} (${i + 1})` : full(a) })));
     rest.push({
       id: `ia-loose-${teacher.id}`,
       title: "รวมเทศน์เดี่ยว (กัณฑ์ละตอน)",
@@ -564,10 +576,11 @@ async function collectPodcasts(teacher, claimed) {
     const eps = [...feed.episodes].sort((a, b) => a.date - b.date);
     const tracks = eps.map((e) => ({ t: clean(e.title, 140), u: e.url, d: e.duration || 0 }));
     const title = clean(r.collectionName || feed.title, 120);
+    if (otherLanguage(title, tracks.map((t) => t.t))) continue;
     albums.push({
       id: `pc-${r.collectionId}`,
       title,
-      topic: topicOf(`${title} ${tracks.map((t) => t.t).join(" ")}`),
+      topic: albumTopic(title, tracks.map((t) => t.t)),
       src: "podcast",
       link: r.collectionViewUrl || feed.link || "",
       base: "",
@@ -630,9 +643,12 @@ function dedupe(albums) {
   return albums.filter((a) => {
     const sig = `${a.n}:${a.tracks.slice(0, 8).map((t) => t.t.toLowerCase().replace(/\s+/g, "")).join(";")}`;
     const name = `${a.n}:${`${a.group ?? ""}${a.title}`.toLowerCase().replace(/[.\-_ ]?\d{2,3}k$/, "").replace(/\s+/g, "")}`;
-    if (seen.has(sig) || seen.has(name)) return false;
+    // Same talks re-uploaded under another name: same count and (almost) the same total length.
+    const size = a.n >= 10 && a.dur > 0 ? `${a.n}~${Math.round(a.dur / 600)}` : null;
+    if (seen.has(sig) || seen.has(name) || (size && seen.has(size))) return false;
     seen.add(sig);
     seen.add(name);
+    if (size) seen.add(size);
     return true;
   });
 }
@@ -655,8 +671,8 @@ async function main() {
       (a, b) =>
         order[a.topic] - order[b.topic] ||
         naturalCompare(a.group ?? a.title, b.group ?? b.title) ||
-        (a.year ?? 9999) - (b.year ?? 9999) ||
-        naturalCompare(a.title, b.title),
+        naturalCompare(a.title, b.title) ||
+        (a.year ?? 9999) - (b.year ?? 9999),
     );
     const tracks = kept.reduce((s, a) => s + a.n, 0);
     console.log(`  → ${kept.length} albums, ${tracks} tracks`);
