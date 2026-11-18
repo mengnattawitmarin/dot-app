@@ -71,7 +71,7 @@ function seconds(d) {
   return parts.reduce((acc, n) => acc * 60 + n, 0);
 }
 
-export function parseFeed(xml) {
+export function parseFeed(xml, limit = EPISODES_PER_SHOW) {
   const channel = xml.split(/<item[\s>]/i)[0];
   const image = attr(channel, "itunes:image", "href") || tag(tag(channel, "image"), "url");
   const items = xml.split(/<item[\s>]/i).slice(1).map((chunk) => chunk.split(/<\/item>/i)[0]);
@@ -99,7 +99,7 @@ export function parseFeed(xml) {
     desc: plain(tag(channel, "description") || tag(channel, "itunes:summary"), 260),
     link: tag(channel, "link"),
     image,
-    episodes: episodes.slice(0, EPISODES_PER_SHOW),
+    episodes: episodes.slice(0, limit),
   };
 }
 
