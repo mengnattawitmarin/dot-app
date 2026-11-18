@@ -143,6 +143,8 @@ async function main() {
       const md = m.metadata;
       const name = clean(first(md.title), 70);
       if (!name || /trailer|preview|test/i.test(name)) continue;
+      // Family app: skip exploitation / adult-themed titles.
+      if (/sex|nud(e|ist)|burlesque|strip|reefer|marihuana|marijuana|cocaine|naked|erotic|sin\b|vice|girls? gone|lust|seduc/i.test(`${name} ${first(md.subject)}`)) continue;
       const year = Number(String(first(md.year) || first(md.date)).slice(0, 4)) || 0;
       const minutes = Math.round(seconds / 60);
       const langRaw = String(first(md.language)).toLowerCase();
