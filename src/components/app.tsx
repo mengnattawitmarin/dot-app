@@ -17,6 +17,7 @@ import { BellIcon, ClipIcon, HomeIcon, PauseIcon, PlayIcon, RadioIcon, SearchIco
 import { ClipperView } from "@/components/clipper-view";
 import { StoriesView } from "@/components/stories-view";
 import { DharmaView, EpisodeCover } from "@/components/dharma-view";
+import { openDharmaLater } from "@/lib/dharma";
 import { getEpisode } from "@/lib/stories";
 import { useEpisodeUi } from "@/lib/episode-player";
 import { HomeView } from "@/components/home-view";
@@ -58,7 +59,18 @@ export function App() {
   const channel = activeChannel ? getChannel(activeChannel) : undefined;
 
   useEffect(() => {
-    void useApp.getState().hydrate().then(applyVolume);
+    void useApp.getState().hydrate().then(() => {
+      applyVolume();
+      // Link into the ธรรมะ mode: ?tab=dharma[&teacher=<id>][&album=<albumId>]
+      const q = new URLSearchParams(window.location.search);
+      if (q.get("tab") !== "dharma" && !q.has("dharma")) return;
+      const teacher = q.get("teacher") ?? q.get("dharma");
+      const album = q.get("album");
+      if (album) openDharmaLater({ kind: "album", showId: album.startsWith("dh-") ? album : `dh-${album}` });
+      else if (teacher) openDharmaLater({ kind: "teacher", id: teacher });
+      useApp.getState().setTab("dharma");
+      window.history.replaceState(null, "", window.location.pathname);
+    });
     void loadRemote()
       .then(loadThaiStations)
       .then(() => {

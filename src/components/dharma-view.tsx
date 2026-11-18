@@ -7,7 +7,6 @@ import {
   reloadDharma,
   takePending,
   type DharmaTarget,
-  teacherMark,
   topicLabel,
   useDharma,
   type DharmaAlbum,
@@ -19,33 +18,27 @@ import { playEpisode } from "@/lib/episode-player";
 import { openExternal } from "@/lib/share";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
-import { ChevronLeft, ChevronRight, ExternalIcon, HeartIcon, LotusIcon, PauseIcon, PlayIcon, SearchIcon } from "@/components/icons";
+import { ChevronLeft, ChevronRight, ExternalIcon, HeartIcon, PauseIcon, PlayIcon, SearchIcon } from "@/components/icons";
 import { Chip, SectionHeader } from "@/components/ui";
+import { TeacherArt } from "@/components/teacher-art";
 
 type View = { kind: "home" } | { kind: "teacher"; id: string } | { kind: "album"; showId: string; from?: string };
 
 const SRC_LABEL: Record<string, string> = { archive: "archive.org", podcast: "พอดแคสต์", web: "เว็บไซต์วัด", theme: "รวมจากทุกแหล่ง", tumma: "tumma.in" };
 
-/** Typographic emblem for a teacher — generated art, no photos. */
-export function TeacherEmblem({ teacher, className }: { teacher: Pick<Teacher, "name">; className?: string }) {
-  return (
-    <span
-      className={cn("relative grid shrink-0 place-items-center overflow-hidden rounded-full ring-gold", className)}
-      style={{ background: "radial-gradient(circle at 30% 25%, var(--color-gold-light), var(--color-gold-deep) 70%)" }}
-    >
-      <LotusIcon size={60} className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-black/15" />
-      <span className="relative text-[1.6em] font-semibold leading-none text-accent-fg">{teacherMark(teacher.name)}</span>
-    </span>
-  );
+/** Teacher medallion — generated art, no photos. */
+export function TeacherEmblem({ teacher, className }: { teacher: Pick<Teacher, "id">; className?: string }) {
+  return <TeacherArt id={teacher.id} className={className} />;
 }
 
 function AlbumArt({ album, className }: { album: DharmaAlbum; className?: string }) {
-  const teacher = getTeacher(album.teacherId);
   const [failed, setFailed] = useState(false);
   return (
-    <span className={cn("relative grid shrink-0 place-items-center overflow-hidden rounded-xl bg-subtle ring-gold", className)}>
-      <LotusIcon size={26} className="text-gold/70" />
-      {teacher ? <span className="absolute bottom-1 text-[9px] text-muted">{teacherMark(teacher.name)}</span> : null}
+    <span className={cn("relative block shrink-0 overflow-hidden rounded-xl", className)}>
+      <TeacherArt id={album.teacherId} rounded="xl" className="h-full w-full" />
+      {album.src === "theme" ? (
+        <span className="absolute inset-x-0 bottom-0 bg-black/55 py-0.5 text-center text-[8px] text-gold-light">ชุดเด่น</span>
+      ) : null}
       {album.image && !failed ? (
         <img src={album.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
@@ -465,16 +458,8 @@ function SearchResults({ query, albums, onAlbum }: { query: string; albums: Dhar
   );
 }
 
-/** Cover for any episode: dharma talks get a lotus emblem (gold), other shows their podcast art. */
+/** Cover for any episode: dharma talks get the teacher's medallion art, other shows their podcast art. */
 export function EpisodeCover({ show, image, className }: { show: Show; image?: string; className?: string }) {
   if (!show.id.startsWith("dh-") || image || show.image) return <CoverImage src={image || show.image} name={show.name} className={className} />;
-  return (
-    <span
-      className={cn("relative grid shrink-0 place-items-center overflow-hidden rounded-xl", className)}
-      style={{ background: "radial-gradient(circle at 30% 20%, var(--color-gold-light), var(--color-gold-deep) 75%)" }}
-    >
-      <LotusIcon className="h-1/2 w-1/2 text-accent-fg/80" />
-      <span className="absolute bottom-[8%] text-[min(0.9rem,12%)] font-semibold text-accent-fg/80">{teacherMark(show.author)}</span>
-    </span>
-  );
+  return <TeacherArt id={show.category.replace(/^dharma:/, "")} rounded="xl" className={className} />;
 }
