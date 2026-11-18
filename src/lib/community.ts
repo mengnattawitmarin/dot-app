@@ -45,7 +45,9 @@ export const useCommunity = create<{
   stories: Upload[];
   films: Upload[];
   status: "idle" | "loading" | "ready" | "off" | "missing";
-}>(() => ({ stories: [], films: [], status: "idle" }));
+  /** Last backend error, shown when the upload button can't open. */
+  error: string | null;
+}>(() => ({ stories: [], films: [], status: "idle", error: null }));
 
 const mediaUrl = (path: string) => supabase!.storage.from("media").getPublicUrl(path).data.publicUrl;
 
@@ -127,20 +129,20 @@ export async function loadCommunity() {
       .eq("hidden", false)
       .order("created_at", { ascending: false })
       .limit(200);
-  } catch {
-    useCommunity.setState({ status: "missing" });
+  } catch (e) {
+    useCommunity.setState({ status: "missing", error: e instanceof Error ? e.message : String(e) });
     return;
   }
   const { data, error } = result;
   if (error) {
     // Table not created yet (migration not run) → hide the upload UI gracefully.
-    useCommunity.setState({ status: /relation|does not exist|schema cache/i.test(error.message) ? "missing" : "ready" });
+    useCommunity.setState({ status: "missing", error: error.message });
     return;
   }
   const all = ((data ?? []) as unknown as Row[]).map(toUpload);
   const stories = all.filter((u) => u.kind === "story");
   const films = all.filter((u) => u.kind === "film");
-  useCommunity.setState({ stories, films, status: "ready" });
+  useCommunity.setState({ stories, films, status: "ready", error: null });
   publish(stories, films);
 }
 

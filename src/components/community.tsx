@@ -19,13 +19,19 @@ export function UploadButton({ kind, categories, className }: { kind: UploadKind
   useEffect(() => {
     if (useCommunity.getState().status === "idle") void loadCommunity();
   }, []);
-  if (status === "off" || status === "missing") return null;
+  if (status === "off") return null;
   return (
     <>
       <button
         type="button"
-        onClick={() => {
+        onClick={async () => {
           if (!useAuth.getState().session) return askSignIn("เข้าสู่ระบบเพื่ออัปโหลดผลงานของคุณ");
+          if (useCommunity.getState().status !== "ready") await loadCommunity();
+          const state = useCommunity.getState();
+          if (state.status !== "ready") {
+            useApp.getState().toast(`ระบบอัปโหลดยังไม่พร้อม: ${state.error ?? "ลองใหม่อีกครั้ง"}`);
+            return;
+          }
           setOpen(true);
         }}
         className={cn("inline-flex h-9 items-center gap-1.5 rounded-full bg-subtle px-3.5 text-xs font-medium text-gold ring-gold", className)}
