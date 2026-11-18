@@ -461,5 +461,5 @@ function SearchResults({ query, albums, onAlbum }: { query: string; albums: Dhar
 /** Cover for any episode: dharma talks get the teacher's medallion art, other shows their podcast art. */
 export function EpisodeCover({ show, image, className }: { show: Show; image?: string; className?: string }) {
   if (!show.id.startsWith("dh-") || image || show.image) return <CoverImage src={image || show.image} name={show.name} className={className} />;
-  return <TeacherArt id={show.category.replace(/^dharma:/, "")} rounded="xl" className={className} />;
+  return <TeacherArt id={show.category.replace(/^dharma:/, "")} name={show.author} rounded="xl" className={className} />;
 }

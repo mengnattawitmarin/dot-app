@@ -1,9 +1,10 @@
 import { useId } from "react";
 import { cn } from "@/lib/cn";
+import { useDharma } from "@/lib/dharma";
 
 /**
- * Generated emblem for each teacher: a seated monk silhouette (not a likeness) in front of a
- * motif from his monastery, on a gold medallion. No photos (see AGENTS.md).
+ * Generated emblem for each teacher: his name on a gold medallion, over a faint motif from his
+ * monastery. No photos (see AGENTS.md).
  */
 type Motif = "vihara" | "forest" | "pond" | "stupa" | "sun" | "mountain" | "sala" | "path" | "garden" | "city";
 
@@ -117,40 +118,50 @@ function MotifShape({ motif }: { motif: Motif }) {
   }
 }
 
-/** Seated meditating monk, generic silhouette. */
-function Monk() {
-  return (
-    <g>
-      <ellipse cx="50" cy="86" rx="30" ry="9" fill="rgba(30,18,4,0.55)" />
-      <path d="M50 46 C36 46 31 58 30 72 C26 74 21 78 21 84 C21 88 30 90 50 90 C70 90 79 88 79 84 C79 78 74 74 70 72 C69 58 64 46 50 46Z" fill="rgba(30,18,4,0.72)" />
-      <path d="M50 47 C58 50 64 60 66 74 L58 80 C56 66 54 56 50 47Z" fill="rgba(255,240,200,0.12)" />
-      <circle cx="50" cy="37" r="9.5" fill="rgba(30,18,4,0.72)" />
-      <path d="M41 78 C45 75 55 75 59 78 C55 80 45 80 41 78Z" fill="rgba(255,240,200,0.18)" />
-    </g>
-  );
+const HONORIFICS = ["หลวงพ่อ", "หลวงตา", "หลวงปู่", "พระอาจารย์", "พระมหา", "ท่านพ่อ", "ท่าน", "พระ"];
+
+/** "หลวงพ่อฤาษีลิงดำ" → { honor: "หลวงพ่อ", short: "ฤาษีลิงดำ" } */
+export function splitName(name: string) {
+  const trimmed = name.trim();
+  const honor = HONORIFICS.find((h) => trimmed.startsWith(h)) ?? "";
+  let short = trimmed.slice(honor.length).trim().split(/\s+/)[0] ?? trimmed;
+  short = short.replace(/ภิกขุ$/, "");
+  return { honor, short: short || trimmed };
 }
 
-export function TeacherArt({ id, className, rounded = "full" }: { id: string; className?: string; rounded?: "full" | "xl" }) {
+/** Visible width of Thai text (combining vowels/tone marks take no space). */
+const visibleLength = (s: string) => s.replace(/[ัิ-ฺ็-๎]/g, "").length;
+
+/** Teacher medallion: the teacher's name set in gold — no photos (see AGENTS.md). */
+export function TeacherArt({ id, name, className, rounded = "full" }: { id: string; name?: string; className?: string; rounded?: "full" | "xl" }) {
   const gid = useId().replace(/:/g, "");
+  const full = name ?? useDharma.getState().teachers.find((t) => t.id === id)?.name ?? "";
+  const { honor, short } = splitName(full);
+  const size = Math.min(26, 118 / Math.max(3, visibleLength(short)));
   const motif = MOTIF[id] ?? "stupa";
   return (
     <span className={cn("relative block shrink-0 overflow-hidden ring-gold", rounded === "full" ? "rounded-full" : "rounded-xl", className)}>
-      <svg viewBox="0 0 100 100" className="h-full w-full" aria-hidden>
+      <svg viewBox="0 0 100 100" className="h-full w-full" role="img" aria-label={full}>
         <defs>
           <radialGradient id={`g${gid}`} cx="35%" cy="22%" r="85%">
             <stop offset="0%" stopColor="var(--color-gold-light)" />
             <stop offset="55%" stopColor="var(--color-gold)" />
             <stop offset="100%" stopColor="var(--color-gold-deep)" />
           </radialGradient>
-          <radialGradient id={`h${gid}`} cx="50%" cy="40%" r="40%">
-            <stop offset="0%" stopColor="rgba(255,248,220,0.55)" />
-            <stop offset="100%" stopColor="rgba(255,248,220,0)" />
-          </radialGradient>
         </defs>
         <rect width="100" height="100" fill={`url(#g${gid})`} />
-        <MotifShape motif={motif} />
-        <circle cx="50" cy="40" r="30" fill={`url(#h${gid})`} />
-        <Monk />
+        <g opacity="0.45" transform="translate(0 30)">
+          <MotifShape motif={motif} />
+        </g>
+        <circle cx="50" cy="50" r={rounded === "full" ? 44 : 46} fill="none" stroke="rgba(40,26,6,0.35)" strokeWidth="1.2" />
+        {honor ? (
+          <text x="50" y={50 - size * 0.62} textAnchor="middle" fontSize="11" fontWeight="500" fill="rgba(30,18,4,0.7)">
+            {honor}
+          </text>
+        ) : null}
+        <text x="50" y={honor ? 50 + size * 0.55 : 50 + size * 0.35} textAnchor="middle" fontSize={size} fontWeight="700" fill="#1e1204">
+          {short}
+        </text>
       </svg>
     </span>
   );
