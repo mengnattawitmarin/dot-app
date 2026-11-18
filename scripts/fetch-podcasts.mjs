@@ -26,8 +26,8 @@ export const CATEGORIES = [
 const EXCLUDE_GENRES = new Set(["1489", "1526", "1527", "1528", "1529", "1530", "1531", "1545", "1310", "1511"]);
 const EXCLUDE_WORDS = /สวท\.|\bFM\b|news|ข่าว|sbs|เรดิโอ|radio thailand|ภาษาไทย.*business/i;
 
-const SHOWS_PER_CATEGORY = 12;
-const EPISODES_PER_SHOW = 15;
+const SHOWS_PER_CATEGORY = 20;
+const EPISODES_PER_SHOW = 30;
 const UA = "DoT-Podcasts/1.0 (+https://github.com/mengnattawitmarin/dot-app)";
 
 const hash = (s) => crypto.createHash("sha1").update(s).digest("hex").slice(0, 12);

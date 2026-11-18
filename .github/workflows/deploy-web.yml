@@ -7,7 +7,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "41 22 * * *" # 05:41 Bangkok — refresh story/podcast episodes daily
+    - cron: "41 22,4,10,16 * * *" # 05:41 / 11:41 / 17:41 / 23:41 Bangkok — new story episodes, films, dharma
   workflow_dispatch:
   workflow_call:
 
@@ -36,6 +36,13 @@ jobs:
       - name: Refresh stories catalogue (podcasts.json)
         continue-on-error: true
         run: node scripts/fetch-podcasts.mjs
+
+      - name: Refresh free films (films.json)
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          curl -fsSL --retry 2 "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/films.json" -o public/films.json || rm -f public/films.json
+          node scripts/fetch-films.mjs
 
       - name: Refresh dharma catalogue (dharma.json)
         continue-on-error: true

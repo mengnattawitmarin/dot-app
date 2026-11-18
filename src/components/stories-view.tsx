@@ -5,6 +5,7 @@ import {
   formatDuration,
   getShow,
   loadStories,
+  refreshStories,
   useStories,
   type Show,
 } from "@/lib/stories";
@@ -12,7 +13,9 @@ import { playEpisode } from "@/lib/episode-player";
 import { useApp } from "@/lib/store";
 import { cn } from "@/lib/cn";
 import { hashPalette } from "@/components/art";
-import { ChevronLeft, HeartIcon, PauseIcon, PlayIcon } from "@/components/icons";
+import { ChevronLeft, HeartIcon, PauseIcon, PlayIcon, RefreshIcon } from "@/components/icons";
+import { UploadButton, UploadRow } from "@/components/community";
+import { COMMUNITY_SHOW, useCommunity } from "@/lib/community";
 import { Chip, SectionHeader } from "@/components/ui";
 
 /** Podcast cover with a generated fallback while it loads or if it fails. */
@@ -32,6 +35,14 @@ export function CoverImage({ src, name, className }: { src?: string; name: strin
   );
 }
 
+function formatUpdated(iso: string) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const today = new Date().toDateString() === d.toDateString();
+  const time = d.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  return today ? `วันนี้ ${time}` : `${d.toLocaleDateString("th-TH", { day: "numeric", month: "short" })} ${time}`;
+}
+
 function timeAgo(ms: number) {
   if (!ms) return "";
   const days = Math.floor((Date.now() - ms) / 864e5);
@@ -41,7 +52,8 @@ function timeAgo(ms: number) {
 }
 
 export function StoriesView() {
-  const { status, categories, shows, progress } = useStories();
+  const { status, categories, shows, progress, updatedAt, refreshing } = useStories();
+  const community = useCommunity((s) => s.stories);
   const favorites = useApp((s) => s.favorites);
   const [cat, setCat] = useState("all");
   const [openShow, setOpenShow] = useState<string | null>(null);
@@ -71,10 +83,25 @@ export function StoriesView() {
         >
           <ChevronLeft size={18} />
         </button>
-        <div>
+        <div className="min-w-0 flex-1">
           <h1 className="text-xl font-semibold">เรื่องเล่า</h1>
-          <p className="text-[11px] text-muted">สยองขวัญ · ความรู้ · นิยายเสียง · ภาพยนตร์เสียง</p>
+          <p className="truncate text-[11px] text-muted">
+            {updatedAt ? `อัปเดตล่าสุด ${formatUpdated(updatedAt)} · อัปเดตเองวันละ 4 รอบ` : "สยองขวัญ · ความรู้ · นิยายเสียง · ภาพยนตร์เสียง"}
+          </p>
         </div>
+        <button
+          type="button"
+          disabled={refreshing}
+          onClick={() =>
+            void refreshStories().then((n) =>
+              useApp.getState().toast(n == null ? "อัปเดตไม่สำเร็จ ลองใหม่อีกครั้ง" : n > 0 ? `มีตอนใหม่ ${n} ตอน` : "เป็นรายการล่าสุดแล้ว"),
+            )
+          }
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-subtle px-3 text-xs text-gold ring-gold disabled:opacity-60"
+          aria-label="อัปเดตเรื่องเล่า"
+        >
+          <RefreshIcon size={15} className={refreshing ? "animate-spin" : ""} /> อัปเดต
+        </button>
       </div>
       <div className="no-scrollbar flex gap-2 overflow-x-auto px-4 pb-3">
         <Chip active={cat === "all"} onClick={() => setCat("all")}>
@@ -121,6 +148,24 @@ export function StoriesView() {
                 </button>
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {cat === "all" ? (
+          <section className="mb-6">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <h2 className="text-[15px] font-semibold">เรื่องเล่าจากผู้ฟัง</h2>
+              <UploadButton kind="story" categories={categories} />
+            </div>
+            {community.length ? (
+              <div className="divide-y divide-line">
+                {community.slice(0, 8).map((u) => (
+                  <UploadRow key={u.id} upload={u} onPlay={() => void playEpisode(`${COMMUNITY_SHOW}:${u.id}`)} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-faint">ยังไม่มีเรื่องเล่าจากผู้ฟัง เป็นคนแรกที่เล่าเรื่องของคุณได้เลย</p>
+            )}
           </section>
         ) : null}
 

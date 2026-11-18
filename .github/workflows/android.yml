@@ -45,6 +45,10 @@ jobs:
         continue-on-error: true
         run: node scripts/fetch-podcasts.mjs
 
+      - name: Bundle latest films list into the app
+        continue-on-error: true
+        run: curl -fsSL --retry 2 https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/films.json -o /tmp/films.json && node -e "JSON.parse(require('fs').readFileSync('/tmp/films.json','utf8')).titles.length" && cp /tmp/films.json public/films.json
+
       - name: Bundle latest dharma catalogue into the app
         continue-on-error: true
         run: curl -fsSL --retry 2 https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/dharma.json -o /tmp/dharma.json && node -e "JSON.parse(require('fs').readFileSync('/tmp/dharma.json','utf8')).teachers.length" && cp /tmp/dharma.json public/dharma.json

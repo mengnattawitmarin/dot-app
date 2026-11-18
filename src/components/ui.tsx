@@ -175,7 +175,7 @@ export function Poster({
       <PosterArt title={title} />
       <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 to-transparent" />
       <div className="absolute right-2 top-2 rounded bg-black/40 px-1.5 py-0.5 text-[9px] font-semibold tracking-widest text-gold-light">
-        Do.T {title.kind === "short" ? "SHORT" : "FILM"}
+        {title.genre === "community" ? "ผู้ใช้" : `Do.T ${title.kind === "short" ? "SHORT" : "FILM"}`}
       </div>
       <div className={cn("absolute inset-x-0 bottom-0", size === "lg" ? "p-4" : "p-2.5")}>
         <p
@@ -184,13 +184,19 @@ export function Poster({
             size === "lg" ? "text-4xl" : size === "md" ? "text-xl" : "text-base",
           )}
         >
-          {words.map((w, i) => (
-            <span key={i} className="block">
-              {w}
+          {words.length <= 3 && title.name.length <= 24 ? (
+            words.map((w, i) => (
+              <span key={i} className="block">
+                {w}
+              </span>
+            ))
+          ) : (
+            <span className={cn("block", size === "lg" ? "line-clamp-4 text-3xl" : size === "md" ? "line-clamp-4 text-lg" : "line-clamp-4 text-[13px]")}>
+              {title.name}
             </span>
-          ))}
+          )}
         </p>
-        {showRating ? (
+        {showRating && title.rating > 0 ? (
           <p className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-gold-light">
             <StarIcon size={11} /> {title.rating.toFixed(1)}
           </p>

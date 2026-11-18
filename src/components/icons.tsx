@@ -281,3 +281,20 @@ export const LotusIcon = (p: IconProps) => (
     <path d="M4 20.2h16" />
   </svg>
 );
+
+export const RefreshIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M20 11a8 8 0 0 0-14.3-4.9L4 8" />
+    <path d="M4 4v4h4" />
+    <path d="M4 13a8 8 0 0 0 14.3 4.9L20 16" />
+    <path d="M20 20v-4h-4" />
+  </svg>
+);
+
+export const UploadIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M12 15V4" />
+    <path d="M7.5 8.5 12 4l4.5 4.5" />
+    <path d="M5 15v3.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V15" />
+  </svg>
+);

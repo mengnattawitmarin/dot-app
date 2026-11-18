@@ -59,6 +59,12 @@ export type Title = {
   palette: [string, string];
   scene: SceneId;
   tags: Array<"new" | "popular" | "featured">;
+  /** Free-film genre row (films.json) or "community" for listeners' uploads. */
+  genre?: string;
+  about?: string;
+  /** Source page (archive.org item, uploader) */
+  link?: string;
+  views?: number;
 };
 
 export type Clip = {

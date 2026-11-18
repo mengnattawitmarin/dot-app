@@ -37,9 +37,19 @@ type StoriesState = {
   categories: StoryCategory[];
   shows: Show[];
   progress: Progress;
+  /** When the published list was built (ISO). */
+  updatedAt: string | null;
+  refreshing: boolean;
 };
 
-export const useStories = create<StoriesState>(() => ({ status: "idle", categories: [], shows: [], progress: {} }));
+export const useStories = create<StoriesState>(() => ({
+  status: "idle",
+  categories: [],
+  shows: [],
+  progress: {},
+  updatedAt: null,
+  refreshing: false,
+}));
 
 const CACHE_KEY = "dot-stories-v1";
 const PROGRESS_KEY = "dot-ep-progress-v1";
@@ -83,14 +93,14 @@ export function nextEpisodeKey(key: string) {
   return next ? `${item.show.id}:${next.id}` : null;
 }
 
-function apply(data: { categories?: StoryCategory[]; shows?: Show[] }) {
+function apply(data: { categories?: StoryCategory[]; shows?: Show[]; updatedAt?: string }) {
   const shows = (data.shows ?? []).map((s) => ({
     ...s,
     // HTTPS pages can't play plain-HTTP audio; native apps can.
     episodes: native ? s.episodes : s.episodes.filter((e) => e.url.startsWith("https:")),
   })).filter((s) => s.episodes.length > 0);
   index(shows);
-  useStories.setState({ categories: data.categories ?? [], shows, status: "ready" });
+  useStories.setState({ categories: data.categories ?? [], shows, status: "ready", updatedAt: data.updatedAt ?? null });
 }
 
 export async function loadStories() {
@@ -116,6 +126,30 @@ export async function loadStories() {
     void saveValue(CACHE_KEY, text);
   } catch {
     if (useStories.getState().status !== "ready") useStories.setState({ status: "error" });
+  }
+}
+
+/**
+ * "อัปเดต" button: fetch the newest published list now. The list itself is rebuilt from every
+ * show's feed four times a day in CI. Returns how many episodes are new to this device.
+ */
+export async function refreshStories(): Promise<number | null> {
+  if (useStories.getState().refreshing) return null;
+  const before = new Set(useStories.getState().shows.flatMap((s) => s.episodes.map((e) => `${s.id}:${e.id}`)));
+  useStories.setState({ refreshing: true });
+  try {
+    const text = await fetchPublishedText("podcasts.json", 15000);
+    if (!text) return null;
+    const data = JSON.parse(text) as { shows?: Show[]; updatedAt?: string };
+    if (!data.shows?.length) return null;
+    apply(data);
+    void saveValue(CACHE_KEY, text);
+    const after = useStories.getState().shows.flatMap((s) => s.episodes.map((e) => `${s.id}:${e.id}`));
+    return before.size ? after.filter((k) => !before.has(k)).length : 0;
+  } catch {
+    return null;
+  } finally {
+    useStories.setState({ refreshing: false });
   }
 }
 

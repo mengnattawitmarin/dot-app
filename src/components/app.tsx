@@ -18,6 +18,7 @@ import { ClipperView } from "@/components/clipper-view";
 import { StoriesView } from "@/components/stories-view";
 import { DharmaView, EpisodeCover } from "@/components/dharma-view";
 import { openDharmaLater } from "@/lib/dharma";
+import { loadCommunity } from "@/lib/community";
 import { getEpisode } from "@/lib/stories";
 import { useEpisodeUi } from "@/lib/episode-player";
 import { HomeView } from "@/components/home-view";
@@ -84,7 +85,9 @@ export function App() {
         window.history.replaceState(null, "", window.location.pathname);
       });
     watchFavorites();
+    void loadCommunity();
     void initAuth(() => {
+      void loadCommunity();
       void pullFavorites();
       void resumePush();
       useApp.getState().bumpNotices();
