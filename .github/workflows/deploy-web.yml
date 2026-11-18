@@ -40,7 +40,10 @@ jobs:
       - name: Refresh dharma catalogue (dharma.json)
         continue-on-error: true
         timeout-minutes: 25
-        run: node scripts/fetch-dharma.mjs
+        run: |
+          # Start from the published copy so a failed refresh never empties the mode.
+          curl -fsSL --retry 2 "https://raw.githubusercontent.com/${{ github.repository }}/gh-pages/dharma.json" -o public/dharma.json || rm -f public/dharma.json
+          node scripts/fetch-dharma.mjs
 
       - name: Build
         run: npm run build

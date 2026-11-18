@@ -30,8 +30,9 @@ export const TEACHERS = [
     place: "วัดจันทาราม (ท่าซุง) อุทัยธานี",
     blurb: "กรรมฐาน ๔๐ มโนมยิทธิ พระโสดาบัน คำสอนตอนเช้า-เย็น และเรื่องเล่าจากวัดท่าซุง",
     terms: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤาษีลิงดํา", "ฤษีลิงดำ", "พระราชพรหมญาณ", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "lingdam", "พระราชพรหมยาน", "หลวงพ่อพระราชพรหมยาน", "วัดท่าซุง", "ท่าซุง", "วีระ ถาวโร", "ruesi ling dam", "ratchaphromyan", "watthasung", "wat tha sung"],
-    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\""],
-    pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง"],
+    search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"วีระ ถาวโร\"", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\""],
+    pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง", "หลวงพ่อมหาวีระ"],
+    descOk: true, // names are unique enough to trust item descriptions
     max: 160,
   },
   {
@@ -130,6 +131,7 @@ export const TEACHERS = [
     place: "สวนป่าสุญญตาธรรม ลพบุรี",
     blurb: "สนทนาธรรมสายหลวงพ่อเทียน การเจริญสติแบบเคลื่อนไหว",
     terms: ["ณรงค์ศักดิ์", "ขีณาลโย", "สุญญตาธรรม"],
+    descOk: true,
     search: ["หลวงตาณรงค์ศักดิ์", "ขีณาลโย"],
     pods: ["หลวงตาณรงค์ศักดิ์"],
     max: 20,
@@ -387,7 +389,8 @@ export function albumsFromItem(meta, teacher) {
       id: `ia-${hash(`${id}/${dir}`)}`,
       title,
       group,
-      topic: albumTopic(`${group ?? ""} ${title}`, tracks.map((x) => x.t)),
+      // Parts of a series stay together under the series' topic.
+      topic: group ? albumTopic(group, []) : albumTopic(title, tracks.map((x) => x.t)),
       src: "archive",
       link,
       base,
@@ -410,7 +413,7 @@ export function mentions(teacher, text) {
   return teacher.terms.some((term) => t.includes(term.toLowerCase()));
 }
 
-const PERSON = /(ajahn|ajaan|ajarn|achaan|acharn|luang ?p[ou]r?|luangpor|bhikkhu|venerable|ven\.|talks? by|หลวงพ่อ|หลวงปู่|หลวงตา|พระอาจารย์|พระอ\.|อาจารย์|อ\.|ครูบา|ท่านพ่อ|ท่านอาจารย์|พระมหา)\s*\S+/i;
+const PERSON = /\b(ajahn|ajaan|ajarn|achaan|acharn|luang ?p[ou]r?|bhikkhu|venerable|ven\.|talks? by)\s+[a-z]\S*|(หลวงพ่อ|หลวงปู่|หลวงตา|พระอาจารย์|พระอ\.|อาจารย์|อ\.|ครูบา|ท่านพ่อ|ท่านอาจารย์|พระมหา)\s*[ก-ฮ]\S*/i;
 
 /** Is this item about our teacher (and not about someone else, or in another language)? */
 export function relevant(teacher, doc) {
@@ -421,7 +424,8 @@ export function relevant(teacher, doc) {
   if (mentions(teacher, title)) return true;
   // Someone else is named in the title → it's theirs.
   if (PERSON.test(title) || TEACHERS.some((o) => o.id !== teacher.id && mentions(o, title))) return false;
-  return mentions(teacher, `${joined(doc.subject)} ${joined(doc.creator)}`);
+  if (mentions(teacher, `${joined(doc.subject)} ${joined(doc.creator)}`)) return true;
+  return Boolean(teacher.descOk) && mentions(teacher, joined(doc.description).slice(0, 2000));
 }
 
 async function archiveSearch(term) {
@@ -658,7 +662,7 @@ async function main() {
     console.log(`  → ${kept.length} albums, ${tracks} tracks`);
     if (!kept.length) continue;
     const { terms, search, pods, max, ...info } = teacher;
-    const { exclude, ...pub } = info;
+    const { exclude, descOk, ...pub } = info;
     out.teachers.push({ ...pub, albums: kept.map(({ _teacher, _pop, _item, ...a }) => a) });
   }
   const total = out.teachers.reduce((s, t) => s + t.albums.reduce((n, a) => n + a.n, 0), 0);
