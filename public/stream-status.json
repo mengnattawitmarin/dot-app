@@ -1,1 +1,6 @@
-{ "checkedAt": null, "dead": [] }
+{
+  "checkedAt": "2026-11-18T22:09:46.077Z",
+  "dead": [
+    "th-red"
+  ]
+}
