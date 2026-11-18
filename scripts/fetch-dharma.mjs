@@ -33,7 +33,8 @@ export const TEACHERS = [
     search: ["ฤาษีลิงดำ", "ฤๅษีลิงดำ", "ฤษีลิงดำ", "ลิงดำ", "พระราชพรหมยาน", "พระราชพรหมญาณ", "วัดท่าซุง", "ท่าซุง", "หลวงพ่อฤาษี", "หลวงพ่อฤๅษี", "\"วีระ ถาวโร\"", "\"ruesi\"", "lingdam", "thasung", "watthasung", "ratchaphromyan", "\"luang por ruesi\"", "ธัมมวิโมกข์", "ฤาษีสอนลูก", "ซอยสายลม", "จุไรท่องเที่ยว", "หลวงพ่อปาน บางนมโค"],
     pods: ["หลวงพ่อฤาษีลิงดำ", "ฤาษีลิงดำ", "ฤๅษีลิงดำ", "พระราชพรหมยาน", "วัดท่าซุง", "หลวงพ่อมหาวีระ", "ธัมมวิโมกข์", "ฤาษีสอนลูก", "หลวงพ่อฤาษี", "ท่าซุง"],
     descOk: true, // names are unique enough to trust item descriptions
-    max: 200,
+    tumma: ["2"],
+    max: 220,
     // ชุดเรื่องเด่น: gathered across every source by title, so each story/วาระ is one list.
     themes: [
       { title: "ประวัติหลวงพ่อปาน วัดบางนมโค", words: ["หลวงพ่อปาน", "หลวงปู่ปาน", "บางนมโค", "อาลัยหลวงพ่อปาน"] },
@@ -623,6 +624,78 @@ async function collectPodcasts(teacher, claimed) {
   return albums;
 }
 
+/**
+ * tumma.in — a free Thai dharma listening site. Each teacher ("artisan", /aN) has playlists (/aN/pM);
+ * its public JSON API returns the tracks with their streaming URLs.
+ */
+let tummaArtisans = null;
+async function tummaDirectory() {
+  if (tummaArtisans) return tummaArtisans;
+  tummaArtisans = new Map();
+  for (const page of ["https://tumma.in/", "https://tumma.in/artisans", "https://tumma.in/a"]) {
+    try {
+      const html = await get(page, { tries: 2 });
+      for (const m of html.matchAll(/href="(?:https:\/\/tumma\.in)?\/a(\d+)(?:-([^"\/?#]*))?"[^>]*>([\s\S]{0,300}?)<\/a>/g)) {
+        const id = m[1];
+        let slug = "";
+        try {
+          slug = decodeURIComponent(m[2] ?? "");
+        } catch {
+          slug = m[2] ?? "";
+        }
+        const text = `${tummaArtisans.get(id) ?? ""} ${slug.replace(/-/g, " ")} ${clean(m[3], 200)}`;
+        tummaArtisans.set(id, text.trim());
+      }
+    } catch (e) {
+      console.warn(`tumma directory ${page}: ${e.message}`);
+    }
+  }
+  console.log(`tumma.in: ${tummaArtisans.size} teachers listed`);
+  return tummaArtisans;
+}
+
+async function collectTumma(teacher) {
+  const dir = await tummaDirectory();
+  const ids = new Set(teacher.tumma ?? []);
+  for (const [id, text] of dir) if (mentions(teacher, text) && !TEACHERS.some((o) => o.id !== teacher.id && mentions(o, text) && !mentions(teacher, text))) ids.add(id);
+  const albums = [];
+  for (const aid of ids) {
+    let html = "";
+    try {
+      html = await get(`https://tumma.in/a${aid}`, { tries: 2 });
+    } catch (e) {
+      console.warn(`  tumma a${aid}: ${e.message}`);
+      continue;
+    }
+    const pids = [...new Set([...html.matchAll(new RegExp(`/a${aid}/p(\\d+)`, "g"))].map((m) => m[1]))];
+    console.log(`  tumma.in a${aid}: ${pids.length} playlists`);
+    const lists = await pool(pids, 4, (pid) => get(`https://tumma.in/api/media/linkedPlaylist/${pid}`, { json: true, tries: 2 }));
+    lists.forEach((res, i) => {
+      const data = res?.data;
+      const rows = (data?.media_rows ?? []).filter((r) => r.soundUrl && String(r.status) === "1");
+      if (!data || !rows.length) return;
+      if (data.famous_name && !mentions(teacher, data.famous_name) && TEACHERS.some((o) => o.id !== teacher.id && mentions(o, data.famous_name))) return;
+      const tracks = rows.map((r) => ({ t: clean(r.topic, 140), u: String(r.soundUrl).replace(/^http:/, "https:"), d: Number(r.sp_duration) || 0 }));
+      const title = clean(data.title, 120);
+      albums.push({
+        id: `tm-${pids[i]}`,
+        title,
+        topic: albumTopic(title, tracks.map((t) => t.t)),
+        src: "tumma",
+        link: `https://tumma.in/a${aid}/p${pids[i]}`,
+        base: "",
+        year: yearOf(title),
+        n: tracks.length,
+        dur: tracks.reduce((s, t) => s + t.d, 0),
+        tracks,
+        _teacher: teacher.id,
+        _pop: 8e5, // curated playlists with clean titles — keep near the top
+      });
+    });
+  }
+  return albums;
+}
+
 /** Free English talks of Luangta Maha Bua (luangta.eu, free distribution). */
 async function collectLuangtaEu() {
   try {
@@ -689,7 +762,10 @@ export function buildThemes(teacher, albums) {
     const has = (text) => words.some((w) => text.toLowerCase().includes(w));
     const refs = [];
     const seen = new Set();
-    albums.forEach((a, ai) => {
+    // Cleanest titles first: tumma.in playlists, then podcasts, then archive uploads.
+    const rank = { tumma: 0, podcast: 1, web: 2, archive: 3 };
+    const order = albums.map((a, ai) => [a, ai]).sort((x, y) => (rank[x[0].src] ?? 9) - (rank[y[0].src] ?? 9));
+    order.forEach(([a, ai]) => {
       const whole = has(`${a.group ?? ""} ${a.title}`);
       a.tracks.forEach((t, ti) => {
         if (!whole && !has(t.t)) return;
@@ -724,6 +800,7 @@ async function main() {
   for (const teacher of TEACHERS) {
     console.log(`${teacher.name}`);
     const albums = [
+      ...(await collectTumma(teacher)),
       ...(await collectPodcasts(teacher, claimed)),
       ...(await collectArchive(teacher, claimed)),
       ...extra.filter((a) => a._teacher === teacher.id),
@@ -744,7 +821,7 @@ async function main() {
     const { terms, search, pods, max, ...info } = teacher;
     const themes = buildThemes(teacher, kept);
     if (themes.length) console.log(`  themes: ${themes.map((t) => `${t.title} (${t.n})`).join(", ")}`);
-    const { exclude, descOk, themes: _themes, ...pub } = info;
+    const { exclude, descOk, themes: _themes, tumma, ...pub } = info;
     out.teachers.push({ ...pub, albums: [...kept, ...themes].map(({ _teacher, _pop, _item, ...a }) => a) });
   }
   const total = out.teachers.reduce((s, t) => s + t.albums.reduce((n, a) => n + a.n, 0), 0);

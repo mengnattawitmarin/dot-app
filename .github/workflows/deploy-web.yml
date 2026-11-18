@@ -37,11 +37,6 @@ jobs:
         continue-on-error: true
         run: node scripts/fetch-podcasts.mjs
 
-      - name: Probe tumma.in (temporary)
-        continue-on-error: true
-        timeout-minutes: 3
-        run: node scripts/probe/tumma.mjs
-
       - name: Refresh dharma catalogue (dharma.json)
         continue-on-error: true
         timeout-minutes: 25
