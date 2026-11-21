@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { useId, useState } from "react";
 import { cn } from "@/lib/cn";
 import { useDharma } from "@/lib/dharma";
 
@@ -133,7 +133,33 @@ export function splitName(name: string) {
 const visibleLength = (s: string) => s.replace(/[ัิ-ฺ็-๎]/g, "").length;
 
 /** Teacher medallion: the teacher's name set in gold — no photos (see AGENTS.md). */
-export function TeacherArt({ id, name, className, rounded = "full" }: { id: string; name?: string; className?: string; rounded?: "full" | "xl" }) {
+/** Portraits supplied by the app owner (public/teachers/<id>.jpg). */
+const PORTRAITS = new Set([
+  "ruesi", "mahabua", "jayasaro", "buddhadasa", "chah", "pramote", "paisal",
+  "jaran", "vajiramedhi", "narongsak", "teean", "phayom", "sompong", "lee",
+]);
+
+export function TeacherArt(props: { id: string; name?: string; className?: string; rounded?: "full" | "xl" }) {
+  const [failed, setFailed] = useState(false);
+  const { id, className, rounded = "full" } = props;
+  if (PORTRAITS.has(id) && !failed) {
+    return (
+      <span className={cn("relative block shrink-0 overflow-hidden bg-subtle ring-gold", rounded === "full" ? "rounded-full" : "rounded-xl", className)}>
+        <img
+          src={`teachers/${id}.jpg`}
+          alt={props.name ?? useDharma.getState().teachers.find((t) => t.id === id)?.name ?? ""}
+          loading="lazy"
+          onError={() => setFailed(true)}
+          className="h-full w-full object-cover object-top"
+          style={{ imageRendering: "pixelated" }}
+        />
+      </span>
+    );
+  }
+  return <NameMedallion {...props} />;
+}
+
+function NameMedallion({ id, name, className, rounded = "full" }: { id: string; name?: string; className?: string; rounded?: "full" | "xl" }) {
   const gid = useId().replace(/:/g, "");
   const full = name ?? useDharma.getState().teachers.find((t) => t.id === id)?.name ?? "";
   const { honor, short } = splitName(full);
