@@ -1,0 +1,7 @@
+{
+  "$comment": "Add or replace stations/channels/titles here (same shape as src/lib/catalog.ts). Apps pick this up on next launch, no store update needed.",
+  "stations": [],
+  "channels": [],
+  "titles": [],
+  "remove": []
+}
